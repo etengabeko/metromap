@@ -1,13 +1,10 @@
 #include "station.h"
 
-#include <QDebug>
 #include <QRegExp>
 #include <QStringList>
 #include <QTextStream>
 
 namespace {
-
-typedef QMap<quint32, qint32>::const_iterator IdCostIterator;
 
 enum json_keys_t
 {
@@ -77,7 +74,6 @@ QString captureFirst(const QRegExp& re, const QString& str)
   if (re.indexIn(str) > -1) {
     return re.cap(1);
   }
-  qDebug() << QString("Invalid json pair: %1").arg(str);
   return QString::null;
 }
 
@@ -138,24 +134,26 @@ const QString& Station::name() const
 
 QString Station::toJsonString() const
 {
+  typedef QMap<quint32, qint32>::const_iterator Iter;
+
   QString id   = makeJsonPair(::jsonKeys()[ID],   m_id  );
   QString line = makeJsonPair(::jsonKeys()[LINE], m_line);
   QString name = makeJsonPair(::jsonKeys()[NAME], m_name);
 
   QStringList tmplist;
-  for (IdCostIterator it = m_crossovers.constBegin(), end = m_crossovers.constEnd(); it != end; ++it) {
+  for (Iter it = m_crossovers.constBegin(), end = m_crossovers.constEnd(); it != end; ++it) {
     tmplist << makeJsonPair(it.key(), it.value());
   }
   QString crossovers = makeJsonObject(::jsonKeys()[CROSSOVER], tmplist);
 
   tmplist.clear();
-  for (IdCostIterator it = m_railtracksNext.constBegin(), end = m_railtracksNext.constEnd(); it != end; ++it) {
+  for (Iter it = m_railtracksNext.constBegin(), end = m_railtracksNext.constEnd(); it != end; ++it) {
     tmplist << makeJsonPair(it.key(), it.value());
   }
   QString next = makeJsonObject(::jsonKeys()[NEXT], tmplist);
 
   tmplist.clear();
-  for (IdCostIterator it = m_railtracksPrevious.constBegin(), end = m_railtracksPrevious.constEnd(); it != end; ++it) {
+  for (Iter it = m_railtracksPrevious.constBegin(), end = m_railtracksPrevious.constEnd(); it != end; ++it) {
     tmplist << makeJsonPair(it.key(), it.value());
   }
   QString previous = makeJsonObject(::jsonKeys()[PREVIOUS], tmplist);

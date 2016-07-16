@@ -5,6 +5,7 @@
 #include <QSharedPointer>
 
 class QString;
+template <typename T> class QList;
 
 namespace metro {
 
@@ -15,8 +16,13 @@ class Map
 public:
   Map();
 
-  void loadFromFile(const QString& fileName);
-  void saveToFile(const QString& fileName) const;
+  QList<quint32> stationsId() const;
+  bool containsStation(quint32 id) const;
+
+  const Station& stationById(quint32 id) const throw();
+
+  void loadFromFile(const QString& fileName) throw();
+  void saveToFile(const QString& fileName) const throw();
 
 private:
   QHash<quint32, QSharedPointer<Station> > m_stations;

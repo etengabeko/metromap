@@ -3,6 +3,7 @@
 #include <station/station.h>
 
 #include <QFile>
+#include <QList>
 #include <QString>
 #include <QTextStream>
 
@@ -12,7 +13,25 @@ Map::Map()
 {
 }
 
-void Map::loadFromFile(const QString& fileName)
+QList<quint32> Map::stationsId() const
+{
+  return m_stations.keys();
+}
+
+bool Map::containsStation(quint32 id) const
+{
+  return m_stations.contains(id);
+}
+
+const Station& Map::stationById(quint32 id) const throw()
+{
+  if (!containsStation(id)) {
+    throw Exception(QObject::tr("Station #%1 not exists").arg(id));
+  }
+  return *(m_stations.find(id).value());
+}
+
+void Map::loadFromFile(const QString& fileName) throw()
 {
   QFile f(fileName);
   if (!f.open(QFile::ReadOnly)) {
@@ -27,7 +46,7 @@ void Map::loadFromFile(const QString& fileName)
   }
 }
 
-void Map::saveToFile(const QString& fileName) const
+void Map::saveToFile(const QString& fileName) const throw()
 {
   QFile f(fileName);
   if (!f.open(QFile::WriteOnly)) {
