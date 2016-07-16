@@ -7,10 +7,13 @@ QT = core  \
 include(common.pro)
 
 HEADERS = \
-          station/station.h          \
+          exception/exception.h \
+          station/station.h     \
+          map/map.h
 
 SOURCES = \
-          station/station.cpp  \
+          station/station.cpp   \
+          map/map.cpp           \
           app/main.cpp
 
 #FORMS =

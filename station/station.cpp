@@ -272,7 +272,7 @@ QString Station::jsonValue(const QString& jsonPair)
   return ::captureFirst(re, jsonPair);
 }
 
-} // metromap
+} // metro
 
 QTextStream& operator<<(QTextStream& out, const metro::Station& station)
 {

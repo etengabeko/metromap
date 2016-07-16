@@ -53,7 +53,7 @@ private:
 
 };
 
-} // metromap
+} // metro
 
 QTextStream& operator<<(QTextStream& out, const metro::Station& station);
 QTextStream& operator>>(QTextStream& in, metro::Station& station);
