@@ -1,8 +1,11 @@
 #include "station.h"
 
+#include <QList>
 #include <QRegExp>
 #include <QStringList>
 #include <QTextStream>
+
+#include<cmath>
 
 namespace {
 
@@ -140,28 +143,74 @@ bool Station::isValid() const
   return !invalid;
 }
 
+QList<quint32> Station::crossOvers() const
+{
+  return m_crossovers.keys();
+}
+
+QList<quint32> Station::railTracks() const
+{
+  return   m_railtracksPrevious.keys()
+        << m_railtracksNext.keys();
+}
+
+qint32 Station::minimumCostTo(quint32 id, bool* ok) const
+{
+  if (ok != 0) {
+    *ok = false;
+  }
+
+  if (id == m_id) {
+    if (ok != 0) {
+      *ok = true;
+    }
+    return 0;
+  }
+
+  float minCost = NAN;
+  if (m_crossovers.contains(id)) {
+    minCost = m_crossovers.value(id);
+  }
+  if (m_railtracksNext.contains(id)) {
+    minCost = (isnan(minCost) == 0) ? qMin(minCost, static_cast<float>(m_railtracksNext.value(id)))
+                                    : m_railtracksNext.value(id);
+  }
+  if (m_railtracksPrevious.contains(id)) {
+    minCost = (isnan(minCost) == 0) ? qMin(minCost, static_cast<float>(m_railtracksPrevious.value(id)))
+                                    : m_railtracksPrevious.value(id);
+  }
+
+  if (isnan(minCost) == 0) {
+    if (ok != 0) {
+      *ok = true;
+    }
+    return static_cast<qint32>(minCost);
+  }
+  return 0;
+}
+
 QString Station::toJsonString() const
 {
-  typedef QMap<quint32, qint32>::const_iterator Iter;
+  typedef QMap<quint32, qint32>::const_iterator iter_t;
 
   QString id   = makeJsonPair(::jsonKeys()[ID],   m_id  );
   QString line = makeJsonPair(::jsonKeys()[LINE], m_line);
   QString name = makeJsonPair(::jsonKeys()[NAME], m_name);
 
   QStringList tmplist;
-  for (Iter it = m_crossovers.constBegin(), end = m_crossovers.constEnd(); it != end; ++it) {
+  for (iter_t it = m_crossovers.constBegin(), end = m_crossovers.constEnd(); it != end; ++it) {
     tmplist << makeJsonPair(it.key(), it.value());
   }
   QString crossovers = makeJsonObject(::jsonKeys()[CROSSOVER], tmplist);
 
   tmplist.clear();
-  for (Iter it = m_railtracksNext.constBegin(), end = m_railtracksNext.constEnd(); it != end; ++it) {
+  for (iter_t it = m_railtracksNext.constBegin(), end = m_railtracksNext.constEnd(); it != end; ++it) {
     tmplist << makeJsonPair(it.key(), it.value());
   }
   QString next = makeJsonObject(::jsonKeys()[NEXT], tmplist);
 
   tmplist.clear();
-  for (Iter it = m_railtracksPrevious.constBegin(), end = m_railtracksPrevious.constEnd(); it != end; ++it) {
+  for (iter_t it = m_railtracksPrevious.constBegin(), end = m_railtracksPrevious.constEnd(); it != end; ++it) {
     tmplist << makeJsonPair(it.key(), it.value());
   }
   QString previous = makeJsonObject(::jsonKeys()[PREVIOUS], tmplist);
@@ -188,7 +237,7 @@ QString Station::makeJsonObject(const QString& key, const QStringList& values) c
 
 Station Station::fromJsonString(const QString& str)
 {
-  typedef QMap<json_keys_t, QString>::const_iterator Iter;
+  typedef QMap<json_keys_t, QString>::const_iterator iter_t;
 
   Station result;
 
@@ -196,7 +245,7 @@ Station Station::fromJsonString(const QString& str)
   for (QStringList::const_iterator stationIt = stationContent.constBegin(), stationEnd = stationContent.end(); stationIt != stationEnd; ++stationIt) {
     const QString& each = *stationIt;
     bool founded = false;
-    for (Iter it = ::jsonKeys().constBegin(), end = ::jsonKeys().constEnd(); it != end; ++it) {
+    for (iter_t it = ::jsonKeys().constBegin(), end = ::jsonKeys().constEnd(); it != end; ++it) {
       if (each.contains(it.value())) {
         switch (it.key()) {
           case ID : {

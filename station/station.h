@@ -5,6 +5,7 @@
 #include <QString>
 
 class QTextStream;
+template <typename T> class QList;
 
 namespace metro {
 
@@ -26,6 +27,11 @@ public:
   const QString& name() const;
 
   bool isValid() const;
+
+  QList<quint32> crossOvers() const;
+  QList<quint32> railTracks() const;
+
+  qint32 minimumCostTo(quint32 id, bool* ok = 0) const;
 
   QString toJsonString() const;
   static Station fromJsonString(const QString& str);

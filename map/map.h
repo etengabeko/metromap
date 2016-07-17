@@ -2,10 +2,10 @@
 #define METROMAP_MAP_MAP_H
 
 #include <QHash>
+#include <QList>
 #include <QSharedPointer>
 
 class QString;
-template <typename T> class QList;
 
 namespace metro {
 
@@ -14,8 +14,6 @@ class Station;
 class Map
 {
 public:
-  Map();
-
   QList<quint32> stationsId() const;
   bool containsStation(quint32 id) const;
 
@@ -24,11 +22,24 @@ public:
   void loadFromFile(const QString& fileName) throw();
   void saveToFile(const QString& fileName) const throw();
 
+  QString debugString() const;
+
+private:
+  void buildStationsGraph();
+
 private:
   QHash<quint32, QSharedPointer<Station> > m_stations;
+
+  QHash<QHash<quint32, QSharedPointer<Station> >::const_iterator,
+        QList<QHash<quint32, QSharedPointer<Station> >::const_iterator> > m_graph;
 
 };
 
 } // metro
+
+inline uint qHash(const QHash<quint32, QSharedPointer<metro::Station> >::const_iterator& key)
+{
+  return qHash(key.key());
+}
 
 #endif // METROMAP_MAP_MAP_H
