@@ -25,6 +25,8 @@ public:
   quint32 line() const;
   const QString& name() const;
 
+  bool isValid() const;
+
   QString toJsonString() const;
   static Station fromJsonString(const QString& str);
 

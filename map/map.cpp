@@ -15,7 +15,9 @@ Map::Map()
 
 QList<quint32> Map::stationsId() const
 {
-  return m_stations.keys();
+  QList<quint32> keys = m_stations.keys();
+  qSort(keys);
+  return keys;
 }
 
 bool Map::containsStation(quint32 id) const
@@ -42,7 +44,9 @@ void Map::loadFromFile(const QString& fileName) throw()
   while (!in.atEnd()) {
     QSharedPointer<Station> st(new Station());
     in >> *st;
-    m_stations.insert(st->id(), st);
+    if (st->isValid()) {
+      m_stations.insert(st->id(), st);
+    }
   }
 }
 

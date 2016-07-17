@@ -132,6 +132,14 @@ const QString& Station::name() const
   return m_name;
 }
 
+bool Station::isValid() const
+{
+  bool invalid =    m_id == 0
+                 || m_line == 0
+                 || m_name.isEmpty();
+  return !invalid;
+}
+
 QString Station::toJsonString() const
 {
   typedef QMap<quint32, qint32>::const_iterator Iter;
@@ -284,14 +292,19 @@ QTextStream& operator>>(QTextStream& in, metro::Station& station)
                          .arg((::jsonKeys()[STATION].isEmpty() ? QString::null
                                                                : QString("\"%1\": ")
                                                                  .arg(::jsonKeys()[STATION])));
-  if (tmp.trimmed().startsWith(stationStart)) {
+  while (   !tmp.trimmed().startsWith(stationStart)
+         && !in.atEnd()) {
+    tmp = in.readLine();
+  }
+
+  if (!in.atEnd()) {
     int openedBrackets = 1,
         closedBrackets = 0;
 
     QStringList content;
     content << tmp;
     while (   openedBrackets > closedBrackets
-           && !in.atEnd()) {
+              && !in.atEnd()) {
       tmp = in.readLine().trimmed();
       if (tmp.contains("{")) {
         ++openedBrackets;

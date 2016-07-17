@@ -16,4 +16,6 @@ SOURCES = \
           map/map.cpp           \
           app/main.cpp
 
+OTHER_FILES = testfiles/*.json
+
 #FORMS =

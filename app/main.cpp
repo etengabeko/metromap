@@ -32,10 +32,14 @@ int main(int argc, char* argv[])
   try {
     metro::Map map;
     map.loadFromFile(::fileNameFromArguments(app.arguments()));
-    foreach (quint32 id, map.stationsId()) {
+    QList<quint32> allStations = map.stationsId();
+    QListIterator<quint32> it(allStations);
+    while (it.hasNext()) {
+      quint32 id = it.next();
       qDebug() << QString("#%1:").arg(id)
                << map.stationById(id).toJsonString();
     }
+    qDebug() << QString("Count: %1").arg(allStations.size());
   }
   catch (metro::Exception& e) {
     qDebug() << e.what();
