@@ -2,11 +2,29 @@
 #include <exception/exception.h>
 #include <station/station.h>
 
+#include <QDebug>
 #include <QFile>
 #include <QList>
+#include <QMap>
+#include <QSet>
 #include <QString>
 #include <QStringList>
 #include <QTextStream>
+
+#include <cmath>
+
+namespace {
+
+const double kInfinity = 1.0/0.0;
+
+struct Solution {
+  double cost;
+  metro::Map::StationIterator from;
+
+  Solution(double acost = kInfinity) : cost(acost) {}
+};
+
+}
 
 namespace metro {
 
@@ -70,24 +88,22 @@ void Map::saveToFile(const QString& fileName) const throw()
 
 void Map::buildStationsGraph()
 {
-  typedef QHash<quint32, QSharedPointer<Station> >::const_iterator iter_t;
-
-  for (iter_t it = m_stations.constBegin(), end = m_stations.constEnd(); it != end; ++it) {
+  for (StationIterator it = m_stations.constBegin(), end = m_stations.constEnd(); it != end; ++it) {
     if (it.value().isNull()) {
       continue;
     }
 
-    QList<iter_t> ref;
+    QList<StationIterator> ref;
     const Station& each = *(it.value());
 
     foreach (quint32 id, each.railTracks()) {
-      iter_t found = m_stations.find(id);
+      StationIterator found = m_stations.find(id);
       if (found != end) {
         ref.append(found);
       }
     }
     foreach (quint32 id, each.crossOvers()) {
-      iter_t found = m_stations.find(id);
+      StationIterator found = m_stations.find(id);
       if (found != end) {
         ref.append(found);
       }
@@ -97,17 +113,88 @@ void Map::buildStationsGraph()
   }
 }
 
+QList<Map::StationIterator> Map::findDijkstraPath(const StationIterator& from, const StationIterator& to) const
+{
+  Q_ASSERT(containsStation(from.key()));
+  Q_ASSERT(containsStation(to.key()));
+
+  QHash<StationIterator, Solution> dist;
+  QHash<StationIterator, bool> used;
+
+  foreach (const StationIterator& node, m_graph.keys()) {
+    if (node != from) {
+      dist[node] = kInfinity;
+    }
+    else {
+      dist[node] = 0.0;
+    }
+    used[node] = false;
+  }
+
+  QHashIterator<StationIterator, QList<StationIterator> > it(m_graph);
+  while (it.hasNext()) {
+    it.next();
+    const StationIterator* nearest = 0;
+    foreach (const StationIterator& each, m_graph.keys()) {
+      if (!used[each] && (nearest == 0 || dist[each].cost < dist[*nearest].cost)) {
+        nearest = &each;
+      }
+      if (nearest == 0) {
+        break;
+      }
+      if (isinf(dist[*nearest].cost) != 0) {
+        continue;
+      }
+      used[*nearest] = true;
+      foreach (const StationIterator& neighbour, m_graph[*nearest]) {
+        bool ok = false;
+        double cost = nearest->value()->minimumCostTo(neighbour.value()->id(), &ok);
+        if (ok) {
+          if (dist[*nearest].cost + cost < dist[neighbour].cost) {
+            dist[neighbour].cost = dist[*nearest].cost + cost;
+            dist[neighbour].from = *nearest;
+          }
+        }
+      }
+    }
+  }
+
+  QList<StationIterator> resultPath;
+  StationIterator step = to;
+  while (step != from) {
+    resultPath.push_front(step);
+    step = dist[step].from;
+  }
+  resultPath.push_front(step);
+  return resultPath;
+}
+
+QList<quint32> Map::findPath(quint32 from, quint32 to) const throw()
+{
+  if (!containsStation(from)) {
+    throw Exception(QObject::tr("Station #%1 not exists").arg(from));
+  }
+  if (!containsStation(to)) {
+    throw Exception(QObject::tr("Station #%1 not exists").arg(to));
+  }
+
+  QList<quint32> result;
+  foreach (const StationIterator& each, findDijkstraPath(m_stations.constFind(from), m_stations.constFind(to))) {
+    result << each.key();
+  }
+
+  return result;
+}
+
 QString Map::debugString() const
 {
-  typedef QHash<quint32, QSharedPointer<Station> >::const_iterator iter_t;
-
   QStringList stations;
-  for (QHash<iter_t, QList<iter_t> >::const_iterator it = m_graph.constBegin(),
+  for (QHash<StationIterator, QList<StationIterator> >::const_iterator it = m_graph.constBegin(),
        end = m_graph.constEnd();
        it != end; ++it) {
     const Station& from = *(it.key().value());
     QStringList ref;
-    QListIterator<iter_t> ref_it(it.value());
+    QListIterator<StationIterator> ref_it(it.value());
     while (ref_it.hasNext()) {
       const Station& to = *(ref_it.next().value());
       bool ok = false;

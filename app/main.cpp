@@ -32,7 +32,12 @@ int main(int argc, char* argv[])
   try {
     metro::Map map;
     map.loadFromFile(::fileNameFromArguments(app.arguments()));
-    qDebug() << map.debugString();
+
+    QStringList path;
+    foreach (quint32 id, map.findPath(51, 12)) {
+      path << QString("id:%1").arg(id);
+    }
+    qDebug() << path.join(" => ");
   }
   catch (metro::Exception& e) {
     qDebug() << e.what();

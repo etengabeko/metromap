@@ -14,6 +14,8 @@ class Station;
 class Map
 {
 public:
+  typedef QHash<quint32, QSharedPointer<Station> >::const_iterator StationIterator;
+
   QList<quint32> stationsId() const;
   bool containsStation(quint32 id) const;
 
@@ -22,16 +24,17 @@ public:
   void loadFromFile(const QString& fileName) throw();
   void saveToFile(const QString& fileName) const throw();
 
+  QList<quint32> findPath(quint32 from, quint32 to) const throw();
+
   QString debugString() const;
 
 private:
   void buildStationsGraph();
+  QList<StationIterator> findDijkstraPath(const StationIterator& from, const StationIterator& to) const;
 
 private:
   QHash<quint32, QSharedPointer<Station> > m_stations;
-
-  QHash<QHash<quint32, QSharedPointer<Station> >::const_iterator,
-        QList<QHash<quint32, QSharedPointer<Station> >::const_iterator> > m_graph;
+  QHash<StationIterator, QList<StationIterator> > m_graph;
 
 };
 
