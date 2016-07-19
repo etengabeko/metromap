@@ -21,6 +21,10 @@ public:
 
   const Station& stationById(quint32 id) const;
 
+  void insertStation(const Station& station);
+  void removeStation(const Station& station);
+  void removeStation(quint32 id);
+
   void loadFromFile(const QString& fileName);
   void saveToFile(const QString& fileName) const;
 
@@ -31,7 +35,7 @@ public:
   QString debugString() const;
 
 private:
-  void buildStationsGraph();
+  void rebuildStationsGraph();
   QList<StationIterator> findDijkstraPath(const StationIterator& from,
                                           const StationIterator& to,
                                           qint32 crossoverPenalty = 0) const;

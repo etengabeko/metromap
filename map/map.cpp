@@ -42,6 +42,24 @@ const Station& Map::stationById(quint32 id) const
   return *(m_stations.find(id).value());
 }
 
+void Map::insertStation(const Station& station)
+{
+  QSharedPointer<Station> newStation(new Station(station));
+  m_stations.insert(newStation->id(), newStation);
+  rebuildStationsGraph();
+}
+
+void Map::removeStation(const Station& station)
+{
+  removeStation(station.id());
+}
+
+void Map::removeStation(quint32 id)
+{
+  m_stations.remove(id);
+  rebuildStationsGraph();
+}
+
 void Map::loadFromFile(const QString& fileName)
 {
   QFile f(fileName);
@@ -58,7 +76,7 @@ void Map::loadFromFile(const QString& fileName)
     }
   }
 
-  buildStationsGraph();
+  rebuildStationsGraph();
 }
 
 void Map::saveToFile(const QString& fileName) const
@@ -82,8 +100,10 @@ void Map::saveToFile(const QString& fileName) const
   }
 }
 
-void Map::buildStationsGraph()
+void Map::rebuildStationsGraph()
 {
+  m_graph.clear();
+
   for (StationIterator it = m_stations.constBegin(), end = m_stations.constEnd(); it != end; ++it) {
     if (it.value().isNull()) {
       continue;
