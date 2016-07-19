@@ -34,7 +34,7 @@ int main(int argc, char* argv[])
     map.loadFromFile(::fileNameFromArguments(app.arguments()));
 
     QStringList path;
-    foreach (quint32 id, map.findPath(51, 12)) {
+    foreach (quint32 id, map.findTimeOptimizedPath(51, 12)) {
       path << QString("id:%1").arg(id);
     }
     qDebug() << path.join(" => ");

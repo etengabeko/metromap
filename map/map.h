@@ -19,12 +19,13 @@ public:
   QList<quint32> stationsId() const;
   bool containsStation(quint32 id) const;
 
-  const Station& stationById(quint32 id) const throw();
+  const Station& stationById(quint32 id) const;
 
-  void loadFromFile(const QString& fileName) throw();
-  void saveToFile(const QString& fileName) const throw();
+  void loadFromFile(const QString& fileName);
+  void saveToFile(const QString& fileName) const;
 
-  QList<quint32> findPath(quint32 from, quint32 to) const throw();
+  QList<quint32> findTimeOptimizedPath(quint32 from, quint32 to) const;
+  QList<quint32> findCrossOverOptimizedPath(quint32 from, quint32 to) const;
 
   QString debugString() const;
 

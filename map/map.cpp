@@ -2,11 +2,7 @@
 #include <exception/exception.h>
 #include <station/station.h>
 
-#include <QDebug>
 #include <QFile>
-#include <QList>
-#include <QMap>
-#include <QSet>
 #include <QString>
 #include <QStringList>
 #include <QTextStream>
@@ -38,7 +34,7 @@ bool Map::containsStation(quint32 id) const
   return m_stations.contains(id);
 }
 
-const Station& Map::stationById(quint32 id) const throw()
+const Station& Map::stationById(quint32 id) const
 {
   if (!containsStation(id)) {
     throw Exception(QObject::tr("Station #%1 not exists").arg(id));
@@ -46,7 +42,7 @@ const Station& Map::stationById(quint32 id) const throw()
   return *(m_stations.find(id).value());
 }
 
-void Map::loadFromFile(const QString& fileName) throw()
+void Map::loadFromFile(const QString& fileName)
 {
   QFile f(fileName);
   if (!f.open(QFile::ReadOnly)) {
@@ -65,7 +61,7 @@ void Map::loadFromFile(const QString& fileName) throw()
   buildStationsGraph();
 }
 
-void Map::saveToFile(const QString& fileName) const throw()
+void Map::saveToFile(const QString& fileName) const
 {
   QFile f(fileName);
   if (!f.open(QFile::WriteOnly)) {
@@ -169,7 +165,7 @@ QList<Map::StationIterator> Map::findDijkstraPath(const StationIterator& from, c
   return resultPath;
 }
 
-QList<quint32> Map::findPath(quint32 from, quint32 to) const throw()
+QList<quint32> Map::findTimeOptimizedPath(quint32 from, quint32 to) const
 {
   if (!containsStation(from)) {
     throw Exception(QObject::tr("Station #%1 not exists").arg(from));
