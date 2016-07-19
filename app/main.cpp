@@ -34,8 +34,14 @@ int main(int argc, char* argv[])
     map.loadFromFile(::fileNameFromArguments(app.arguments()));
 
     QStringList path;
-    foreach (quint32 id, map.findTimeOptimizedPath(51, 12)) {
-      path << QString("id:%1").arg(id);
+    foreach (quint32 id, map.findTimeOptimizedPath(13, 45)) {
+      path << QString("%1:%2").arg(id).arg(map.stationById(id).name());
+    }
+    qDebug() << path.join(" => ");
+
+    path.clear();
+    foreach (quint32 id, map.findCrossOverOptimizedPath(13, 45)) {
+      path << QString("%1:%2").arg(id).arg(map.stationById(id).name());
     }
     qDebug() << path.join(" => ");
   }

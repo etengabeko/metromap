@@ -11,13 +11,13 @@
 
 namespace {
 
-const double kInfinity = 1.0/0.0;
+double constInfinity() { return 1.0/0.0; }
 
 struct Solution {
   double cost;
   metro::Map::StationIterator from;
 
-  Solution(double acost = kInfinity) : cost(acost) {}
+  Solution(double acost = constInfinity()) : cost(acost) {}
 };
 
 }
@@ -109,7 +109,7 @@ void Map::buildStationsGraph()
   }
 }
 
-QList<Map::StationIterator> Map::findDijkstraPath(const StationIterator& from, const StationIterator& to) const
+QList<Map::StationIterator> Map::findDijkstraPath(const StationIterator& from, const StationIterator& to, qint32 crossoverPenalty) const
 {
   Q_ASSERT(containsStation(from.key()));
   Q_ASSERT(containsStation(to.key()));
@@ -119,7 +119,7 @@ QList<Map::StationIterator> Map::findDijkstraPath(const StationIterator& from, c
 
   foreach (const StationIterator& node, m_graph.keys()) {
     if (node != from) {
-      dist[node] = kInfinity;
+      dist[node] = ::constInfinity();
     }
     else {
       dist[node] = 0.0;
@@ -144,7 +144,7 @@ QList<Map::StationIterator> Map::findDijkstraPath(const StationIterator& from, c
       used[*nearest] = true;
       foreach (const StationIterator& neighbour, m_graph[*nearest]) {
         bool ok = false;
-        double cost = nearest->value()->minimumCostTo(neighbour.value()->id(), &ok);
+        double cost = nearest->value()->minimumCostTo(neighbour.value()->id(), crossoverPenalty, &ok);
         if (ok) {
           if (dist[*nearest].cost + cost < dist[neighbour].cost) {
             dist[neighbour].cost = dist[*nearest].cost + cost;
@@ -167,6 +167,18 @@ QList<Map::StationIterator> Map::findDijkstraPath(const StationIterator& from, c
 
 QList<quint32> Map::findTimeOptimizedPath(quint32 from, quint32 to) const
 {
+  const qint32 zeroCrossoverPenalty = 0;
+  return findPath(from, to, zeroCrossoverPenalty);
+}
+
+QList<quint32> Map::findCrossOverOptimizedPath(quint32 from, quint32 to) const
+{
+  const qint32 customCrossoverPenalty = 10;
+  return findPath(from, to, customCrossoverPenalty);
+}
+
+QList<quint32> Map::findPath(quint32 from, quint32 to, qint32 crossoverPenalty) const
+{
   if (!containsStation(from)) {
     throw Exception(QObject::tr("Station #%1 not exists").arg(from));
   }
@@ -175,7 +187,9 @@ QList<quint32> Map::findTimeOptimizedPath(quint32 from, quint32 to) const
   }
 
   QList<quint32> result;
-  foreach (const StationIterator& each, findDijkstraPath(m_stations.constFind(from), m_stations.constFind(to))) {
+  foreach (const StationIterator& each, findDijkstraPath(m_stations.constFind(from),
+                                                         m_stations.constFind(to),
+                                                         crossoverPenalty)) {
     result << each.key();
   }
 
@@ -184,6 +198,8 @@ QList<quint32> Map::findTimeOptimizedPath(quint32 from, quint32 to) const
 
 QString Map::debugString() const
 {
+  const qint32 zeroCrossoverPenalty = 0;
+
   QStringList stations;
   for (QHash<StationIterator, QList<StationIterator> >::const_iterator it = m_graph.constBegin(),
        end = m_graph.constEnd();
@@ -194,7 +210,7 @@ QString Map::debugString() const
     while (ref_it.hasNext()) {
       const Station& to = *(ref_it.next().value());
       bool ok = false;
-      qint32 cost = from.minimumCostTo(to.id(), &ok);
+      qint32 cost = from.minimumCostTo(to.id(), zeroCrossoverPenalty, &ok);
       ref << QString("%1:%2 => %3").arg(to.id()).arg(to.name()).arg((ok ? QString::number(cost) : QString("NaN")));
     }
     stations << QString("%1:%2 {%3}").arg(from.id()).arg(from.name()).arg(ref.join(", "));

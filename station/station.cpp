@@ -154,7 +154,7 @@ QList<quint32> Station::railTracks() const
         << m_railtracksNext.keys();
 }
 
-qint32 Station::minimumCostTo(quint32 id, bool* ok) const
+qint32 Station::minimumCostTo(quint32 id, qint32 crossoverPenalty, bool* ok) const
 {
   if (ok != 0) {
     *ok = false;
@@ -169,7 +169,7 @@ qint32 Station::minimumCostTo(quint32 id, bool* ok) const
 
   float minCost = NAN;
   if (m_crossovers.contains(id)) {
-    minCost = m_crossovers.value(id);
+    minCost = m_crossovers.value(id) + crossoverPenalty;
   }
   if (m_railtracksNext.contains(id)) {
     minCost = (isnan(minCost) == 0) ? qMin(minCost, static_cast<float>(m_railtracksNext.value(id)))

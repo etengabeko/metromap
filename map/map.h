@@ -26,12 +26,15 @@ public:
 
   QList<quint32> findTimeOptimizedPath(quint32 from, quint32 to) const;
   QList<quint32> findCrossOverOptimizedPath(quint32 from, quint32 to) const;
+  QList<quint32> findPath(quint32 from, quint32 to, qint32 crossoverPenalty) const;
 
   QString debugString() const;
 
 private:
   void buildStationsGraph();
-  QList<StationIterator> findDijkstraPath(const StationIterator& from, const StationIterator& to) const;
+  QList<StationIterator> findDijkstraPath(const StationIterator& from,
+                                          const StationIterator& to,
+                                          qint32 crossoverPenalty = 0) const;
 
 private:
   QHash<quint32, QSharedPointer<Station> > m_stations;
