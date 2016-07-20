@@ -62,6 +62,8 @@ void Map::removeStation(quint32 id)
 
 void Map::loadFromFile(const QString& fileName)
 {
+  m_stations.clear();
+
   QFile f(fileName);
   if (!f.open(QFile::ReadOnly)) {
     throw Exception(f.errorString());
