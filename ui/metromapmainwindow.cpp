@@ -58,6 +58,11 @@ bool MetroMapMainWindow::isMapChanged() const
   return m_needSaveMap;
 }
 
+const Map& MetroMapMainWindow::map() const
+{
+  return *m_map;
+}
+
 void MetroMapMainWindow::createMenu()
 {
   QMenu* mapmenu = menuBar()->addMenu(QObject::tr("Map"));

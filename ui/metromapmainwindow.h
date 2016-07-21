@@ -30,6 +30,8 @@ public:
 
   bool isMapChanged() const;
 
+  const Map& map()const;
+
 signals:
   void mapChanged();
 

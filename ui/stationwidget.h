@@ -1,5 +1,5 @@
-#ifndef METROMAP_STATIONWIDGET_H
-#define METROMAP_STATIONWIDGET_H
+#ifndef METROMAP_UI_STATIONWIDGET_H
+#define METROMAP_UI_STATIONWIDGET_H
 
 #include <QWidget>
 
@@ -23,4 +23,4 @@ private:
 
 } // metro
 
-#endif // STATIONWIDGET_H
+#endif // METROMAP_UI_STATIONWIDGET_H
