@@ -25,6 +25,10 @@ public:
   explicit SelectStationWidget(QWidget* parent = 0);
   ~SelectStationWidget();
 
+  quint32 selectedStation() const;
+
+  void setPlaceholderText(const QString& str);
+
   void setStations(QMultiMap<quint32, QPair<quint32, QString> >* stations);
 
   static QMultiMap<quint32, QPair<quint32, QString> > getStationsByLines(const Map& map);
@@ -41,8 +45,10 @@ private slots:
 
 private:
   Ui::SelectStationWidget* m_ui;
-  QScopedPointer<QCompleter> completer_;
+  QScopedPointer<QCompleter> m_completer;
   QMultiMap<quint32, QPair<quint32, QString> >* m_stations;
+
+  quint32 m_currentStation;
 
 };
 

@@ -17,6 +17,7 @@ public:
   typedef QHash<quint32, QSharedPointer<Station> >::const_iterator StationIterator;
 
   QList<quint32> stationsId() const;
+  QList<quint32> linesId() const;
   bool containsStation(quint32 id) const;
 
   const Station& stationById(quint32 id) const;

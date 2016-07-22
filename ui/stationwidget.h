@@ -9,16 +9,36 @@ namespace Ui {
 
 namespace metro {
 
+class MetroMapMainWindow;
+
 class StationWidget : public QWidget
 {
   Q_OBJECT
 
 public:
-  explicit StationWidget(QWidget *parent = 0);
+  explicit StationWidget(MetroMapMainWindow* ctrl, QWidget *parent = 0);
   ~StationWidget();
+
+public slots:
+  void slotStationSelected(quint32 id);
+
+private slots:
+  void slotMapChanged();
+  void slotChangeMode();
+
+private:
+  void clear();
+  void setEditMode();
+  void setShowMode();
 
 private:
   Ui::StationWidget* m_ui;
+
+  MetroMapMainWindow* m_controller;
+
+  bool m_lockMode;
+  quint32 m_currentStation;
+
 };
 
 } // metro

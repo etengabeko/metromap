@@ -29,6 +29,18 @@ QList<quint32> Map::stationsId() const
   return m_stations.keys();
 }
 
+QList<quint32> Map::linesId() const
+{
+  QList<quint32> lines;
+  for (StationIterator it = m_stations.constBegin(), end = m_stations.constEnd(); it != end; ++it) {
+    quint32 each = it.value()->line();
+    if (!lines.contains(each)) {
+      lines.append(each);
+    }
+  }
+  return lines;
+}
+
 bool Map::containsStation(quint32 id) const
 {
   return m_stations.contains(id);

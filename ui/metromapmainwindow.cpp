@@ -51,6 +51,7 @@ void MetroMapMainWindow::init()
   createCentralWidget();
 
   //TODO init connections
+  connect(m_routes, SIGNAL(routeCreated(const QList<quint32>&)), m_mapview, SLOT(slotSelectStations(const QList<quint32>&)));
 }
 
 bool MetroMapMainWindow::isMapChanged() const
@@ -79,20 +80,20 @@ void MetroMapMainWindow::createDockWidgets()
 {
   QDockWidget* dock = new QDockWidget(QObject::tr("Station Info"), this);
   dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-  m_station = new StationWidget(dock);
+  m_station = new StationWidget(this, dock);
   dock->setWidget(m_station);
   addDockWidget(Qt::RightDockWidgetArea, dock);
 
   dock = new QDockWidget(QObject::tr("Routes"), this);
   dock->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
-  m_routes = new RoutesWidget(dock);
+  m_routes = new RoutesWidget(this, dock);
   dock->setWidget(m_routes);
   addDockWidget(Qt::BottomDockWidgetArea, dock);
 }
 
 void MetroMapMainWindow::createCentralWidget()
 {
-  m_mapview = new MapView(this);
+  m_mapview = new MapView(this, this);
   setCentralWidget(m_mapview);
 }
 
@@ -208,7 +209,7 @@ void MetroMapMainWindow::slotCloseMap()
   }
 
   m_mapFileName.clear();
-  m_map.reset();
+  m_map.reset(new Map());
   m_needSaveMap = false;
 
   emit mapChanged();

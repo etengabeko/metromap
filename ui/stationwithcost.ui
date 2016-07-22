@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>StationWithCost</class>
+ <widget class="QWidget" name="StationWithCost">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>147</width>
+    <height>51</height>
+   </rect>
+  </property>
+  <layout class="QHBoxLayout" name="horizontalLayout">
+   <item>
+    <widget class="metro::SelectStationWidget" name="stationWidget" native="true"/>
+   </item>
+   <item>
+    <widget class="QSpinBox" name="costSpinBox">
+     <property name="suffix">
+      <string> min</string>
+     </property>
+     <property name="minimum">
+      <number>1</number>
+     </property>
+     <property name="maximum">
+      <number>59</number>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <widget class="QToolButton" name="removeButton">
+     <property name="minimumSize">
+      <size>
+       <width>32</width>
+       <height>32</height>
+      </size>
+     </property>
+     <property name="text">
+      <string>−</string>
+     </property>
+    </widget>
+   </item>
+  </layout>
+ </widget>
+ <customwidgets>
+  <customwidget>
+   <class>SelectStationWidget</class>
+   <extends>QWidget</extends>
+   <header>ui/selectstationwidget.h</header>
+  </customwidget>
+ </customwidgets>
+ <resources/>
+ <connections/>
+</ui>

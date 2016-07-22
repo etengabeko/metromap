@@ -24,6 +24,19 @@ bool idLessThen(const QPair<quint32, QString>& lhs, const QPair<quint32, QString
   return lhs.first < rhs.first;
 }
 
+template <typename T> QList<T> unique(const QList<T>& repeated)
+{
+  QList<T> uniq;
+  QListIterator<T> it(repeated);
+  while (it.hasNext()) {
+    const T& each = it.next();
+    if (!uniq.contains(each)) {
+      uniq.append(each);
+    }
+  }
+  return uniq;
+}
+
 }
 
 namespace metro {
@@ -43,6 +56,8 @@ SelectStationDialog::SelectStationDialog(QMultiMap<quint32, QPair<quint32, QStri
 
   connect(m_ui->byAlphabetButton, SIGNAL(toggled(bool)), SLOT(slotChangeOrderType(bool)));
   connect(m_ui->byLinesButton, SIGNAL(toggled(bool)), SLOT(slotChangeOrderType(bool)));
+
+  connect(m_ui->nameTreeWidget, SIGNAL(itemDoubleClicked(QTreeWidgetItem*,int)), SLOT(accept()));
 
   m_ui->byAlphabetButton->setChecked(true);
 }
@@ -113,7 +128,7 @@ QList<QPair<quint32, QString> > SelectStationDialog::stationsByLines() const
   QList<QPair<quint32, QString> > allStations;
   if (m_stations != 0) {
     const quint32 zero = 0;
-    foreach (quint32 line, m_stations->keys()) {
+    foreach (quint32 line, ::unique(m_stations->keys())) {
       QList<QPair<quint32, QString> > lineStations = m_stations->values(line);
       qSort(lineStations.begin(), lineStations.end(), &::idLessThen);
       allStations.append(qMakePair(zero, QObject::tr("Line %1").arg(line)));

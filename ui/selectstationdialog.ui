@@ -6,12 +6,12 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>264</width>
-    <height>259</height>
+    <width>288</width>
+    <height>286</height>
    </rect>
   </property>
   <property name="windowTitle">
-   <string>Выбор станции</string>
+   <string>Select station</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -32,7 +32,7 @@
      <item>
       <widget class="QPushButton" name="byAlphabetButton">
        <property name="text">
-        <string>А...Я</string>
+        <string>A...Z</string>
        </property>
        <property name="checkable">
         <bool>true</bool>
@@ -45,7 +45,7 @@
      <item>
       <widget class="QPushButton" name="byLinesButton">
        <property name="text">
-        <string>Линии</string>
+        <string>Lines</string>
        </property>
        <property name="checkable">
         <bool>true</bool>
