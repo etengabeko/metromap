@@ -1,10 +1,13 @@
 #include "findroutes.h"
 #include "ui_findroutes.h"
 
+#include "managebuttons.h"
 #include "metromapmainwindow.h"
 #include "selectstation.h"
 
 #include <map/map.h>
+
+#include <QToolButton>
 
 namespace metro {
 
@@ -17,18 +20,7 @@ FindRoutesWidget::FindRoutesWidget(MetroMapMainWindow* ctrl, QWidget* parent) :
 
   m_ui->setupUi(this);
 
-  QLayoutItem* spacer = m_ui->stationsGroupBox->layout()->takeAt(m_ui->stationsGroupBox->layout()->count()-1);
-
-  SelectStationWidget* st = new SelectStationWidget(this);
-  st->setObjectName("from");
-  st->setPlaceholderText(QObject::tr("From"));
-  m_ui->stationsGroupBox->layout()->addWidget(st);
-  st = new SelectStationWidget(this);
-  st->setObjectName("to");
-  st->setPlaceholderText(QObject::tr("To"));
-  m_ui->stationsGroupBox->layout()->addWidget(st);
-
-  m_ui->stationsGroupBox->layout()->addItem(spacer);
+  init();
 
   connect(m_ui->calcButton, SIGNAL(clicked()), SLOT(slotCalcRoute()));
   connect(m_controller, SIGNAL(mapChanged()), SLOT(slotMapChanged()));
@@ -38,6 +30,82 @@ FindRoutesWidget::~FindRoutesWidget()
 {
   delete m_ui;
   m_ui = 0;
+}
+
+void FindRoutesWidget::init()
+{
+  SelectStationWidget* from = new SelectStationWidget(this);
+  from->setObjectName("from");
+  from->setPlaceholderText(QObject::tr("From"));
+
+  SelectStationWidget* to = new SelectStationWidget(this);
+  to->setObjectName("to");
+  to->setPlaceholderText(QObject::tr("To"));
+
+  ManageButtons* mb = new ManageButtons(this);
+  connect(mb, SIGNAL(addClicked()), SLOT(slotAddMediateStation()));
+  mb->setManagedWidgets(from, to);
+
+  QLayoutItem* spacer = m_ui->stationsGroupBox->layout()->takeAt(m_ui->stationsGroupBox->layout()->count()-1);
+  m_ui->stationsGroupBox->layout()->addWidget(from);
+  m_ui->stationsGroupBox->layout()->addWidget(mb);
+  m_ui->stationsGroupBox->layout()->addWidget(to);
+  m_ui->stationsGroupBox->layout()->addItem(spacer);
+}
+
+void FindRoutesWidget::slotAddMediateStation()
+{
+  ManageButtons* senderMb = qobject_cast<ManageButtons*>(sender());
+  if (senderMb == 0) {
+    return;
+  }
+
+  SelectStationWidget* toSw = senderMb->below();
+
+  SelectStationWidget* newSw = new SelectStationWidget(this);
+  newSw->setPlaceholderText(QObject::tr("Through"));
+  newSw->setStations(&m_stations);
+
+  ManageButtons* newMb = new ManageButtons(newSw);
+  connect(newMb, SIGNAL(addClicked()), SLOT(slotAddMediateStation()));
+  senderMb->setManagedWidgets(senderMb->above(), newSw);
+  newMb->setManagedWidgets(newSw, toSw);
+
+  QToolButton* rmButton = new QToolButton(this);
+  connect(newSw, SIGNAL(destroyed()), rmButton, SLOT(deleteLater()));
+  rmButton->setMinimumSize(32,32);
+  rmButton->setText("−");
+  connect(rmButton, SIGNAL(clicked()), newMb, SIGNAL(removeClicked()));
+  connect(newMb, SIGNAL(removeClicked()), SLOT(slotRemoveMediateStation()));
+
+  QWidget* wgt = new QWidget(this);
+  connect(newSw, SIGNAL(destroyed()), wgt, SLOT(deleteLater()));
+  wgt->setLayout(new QHBoxLayout(wgt));
+  wgt->layout()->addWidget(newSw);
+  wgt->layout()->addWidget(rmButton);
+
+
+  QBoxLayout* lo = qobject_cast<QBoxLayout*>(m_ui->stationsGroupBox->layout());
+  if (lo != 0) {
+    int index = lo->indexOf(senderMb);
+    lo->insertWidget(++index, wgt);
+    lo->insertWidget(++index, newMb);
+  }
+}
+
+void FindRoutesWidget::slotRemoveMediateStation()
+{
+  ManageButtons* rmMb = qobject_cast<ManageButtons*>(sender());
+  if (rmMb != 0) {
+    SelectStationWidget* rmSw = rmMb->above();
+    int index = m_ui->stationsGroupBox->layout()->indexOf(rmMb);
+    ManageButtons* aboveMb = qobject_cast<ManageButtons*>(m_ui->stationsGroupBox->layout()->itemAt(index-2)->widget());
+    if (aboveMb != 0) {
+      aboveMb->setManagedWidgets(aboveMb->above(), rmMb->below());
+    }
+    delete rmSw;
+  }
+  delete rmMb;
 }
 
 void FindRoutesWidget::slotCalcRoute()

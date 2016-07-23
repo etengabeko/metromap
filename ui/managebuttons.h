@@ -9,6 +9,8 @@ class ManageButtons;
 
 namespace metro {
 
+class SelectStationWidget;
+
 class ManageButtons : public QWidget
 {
   Q_OBJECT
@@ -17,12 +19,23 @@ public:
   explicit ManageButtons(QWidget* parent = 0);
   ~ManageButtons();
 
+  void setManagedWidgets(SelectStationWidget* above, SelectStationWidget* below);
+  SelectStationWidget* above();
+  SelectStationWidget* below();
+
 signals:
   void moveClicked();
   void addClicked();
+  void removeClicked();
+
+private slots:
+  void slotSwapStations();
 
 private:
   Ui::ManageButtons* m_ui;
+
+  SelectStationWidget* m_above;
+  SelectStationWidget* m_below;
 
 };
 

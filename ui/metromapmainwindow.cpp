@@ -9,13 +9,17 @@
 #include <map/map.h>
 #include <station/station.h>
 
+#include <QAction>
 #include <QApplication>
 #include <QCloseEvent>
 #include <QDockWidget>
 #include <QFileDialog>
+#include <QLabel>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QRegExp>
+#include <QStatusBar>
 
 namespace {
 
@@ -48,8 +52,11 @@ void MetroMapMainWindow::init()
 {
   createMenu();
   createDockWidgets();
+  createStatusBar();
   createCentralWidget();
 
+  menuBar()->addAction(QObject::tr("Quit"), this, SLOT(close()));
+  connect(this, SIGNAL(mapChanged()), SLOT(slotMapChanged()));
   //TODO init connections
   connect(m_routes, SIGNAL(routeCreated(const QList<quint32>&)), m_mapview, SLOT(slotSelectStations(const QList<quint32>&)));
 }
@@ -66,29 +73,63 @@ const Map& MetroMapMainWindow::map() const
 
 void MetroMapMainWindow::createMenu()
 {
-  QMenu* mapmenu = menuBar()->addMenu(QObject::tr("Map"));
-  mapmenu->addAction(QObject::tr("New"), this, SLOT(slotCreateMap()));
-  mapmenu->addAction(QObject::tr("Open"), this, SLOT(slotLoadMap()));
-  mapmenu->addAction(QObject::tr("Save"), this, SLOT(slotSaveMap()));
-  mapmenu->addAction(QObject::tr("Save as..."), this, SLOT(slotSaveAsMap()));
-  mapmenu->addAction(QObject::tr("Close"), this, SLOT(slotCloseMap()));
+  QMenu* fileMenu = menuBar()->addMenu(QObject::tr("File"));
 
-  menuBar()->addAction(QObject::tr("Quit"), this, SLOT(close()));
+  QAction* action = new QAction(QObject::tr("New"), menuBar());
+  action->setObjectName("map_new");
+  connect(action, SIGNAL(triggered()), SLOT(slotCreateMap()));
+  fileMenu->addAction(action);
+
+  action = new QAction(QObject::tr("Open"), menuBar());
+  action->setObjectName("map_open");
+  connect(action, SIGNAL(triggered()), SLOT(slotLoadMap()));
+  fileMenu->addAction(action);
+
+  action = new QAction(QObject::tr("Save"), menuBar());
+  action->setObjectName("map_save");
+  action->setEnabled(false);
+  connect(action, SIGNAL(triggered()), SLOT(slotSaveMap()));
+  fileMenu->addAction(action);
+
+  action = new QAction(QObject::tr("Save As..."), menuBar());
+  action->setObjectName("map_save_as");
+  action->setEnabled(false);
+  connect(action, SIGNAL(triggered()), SLOT(slotSaveAsMap()));
+  fileMenu->addAction(action);
+
+  action = new QAction(QObject::tr("Close"), menuBar());
+  action->setObjectName("map_close");
+  action->setEnabled(false);
+  connect(action, SIGNAL(triggered()), SLOT(slotCloseMap()));
+  fileMenu->addAction(action);
 }
 
 void MetroMapMainWindow::createDockWidgets()
 {
+  QMenu* mapMenu = menuBar()->addMenu(QObject::tr("Map"));
+
   QDockWidget* dock = new QDockWidget(QObject::tr("Station Info"), this);
-  dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
+  dock->setAllowedAreas(Qt::RightDockWidgetArea | Qt::LeftDockWidgetArea);
   m_station = new StationInfoWidget(this, dock);
   dock->setWidget(m_station);
+  mapMenu->addAction(dock->toggleViewAction());
   addDockWidget(Qt::RightDockWidgetArea, dock);
+  dock->setHidden(true);
 
-  dock = new QDockWidget(QObject::tr("Routes"), this);
-  dock->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
+  dock = new QDockWidget(QObject::tr("Find Routes"), this);
+  dock->setAllowedAreas(Qt::RightDockWidgetArea | Qt::LeftDockWidgetArea);
   m_routes = new FindRoutesWidget(this, dock);
   dock->setWidget(m_routes);
-  addDockWidget(Qt::BottomDockWidgetArea, dock);
+  mapMenu->addAction(dock->toggleViewAction());
+  addDockWidget(Qt::LeftDockWidgetArea, dock);
+}
+
+void MetroMapMainWindow::createStatusBar()
+{
+  QStatusBar* stbar = statusBar();
+  QLabel* lb = new QLabel(QObject::tr("Map file:"), stbar);
+  lb->setObjectName("map_name");
+  stbar->addWidget(lb);
 }
 
 void MetroMapMainWindow::createCentralWidget()
@@ -109,7 +150,22 @@ void MetroMapMainWindow::slotCreateMap()
   m_map.reset(new Map());
   m_needSaveMap = true;
 
+  enableMenuActions(true);
+
   emit mapChanged();
+}
+
+void MetroMapMainWindow::enableMenuActions(bool isMapOpen)
+{
+  foreach (QAction* each, menuBar()->findChildren<QAction*>(QRegExp("map_.*"))) {
+    if (each != 0) {
+           if (each->objectName() == "map_new")     { each->setEnabled(!isMapOpen); }
+      else if (each->objectName() == "map_open")    { each->setEnabled(!isMapOpen); }
+      else if (each->objectName() == "map_save")    { each->setEnabled(isMapOpen) ; }
+      else if (each->objectName() == "map_save_as") { each->setEnabled(isMapOpen) ; }
+      else if (each->objectName() == "map_close")   { each->setEnabled(isMapOpen) ; }
+    }
+  }
 }
 
 void MetroMapMainWindow::slotLoadMap()
@@ -140,6 +196,8 @@ void MetroMapMainWindow::slotLoadMap()
     }
     m_needSaveMap = false;
 
+    enableMenuActions(true);
+
     emit mapChanged();
   }
 }
@@ -164,6 +222,7 @@ void MetroMapMainWindow::slotSaveAsMap()
   if (!fileName.isEmpty()) {
     if (trySaveMap(fileName)) {
       m_mapFileName = fileName;
+      slotMapChanged();
       m_needSaveMap = false;
     }
   }
@@ -186,6 +245,15 @@ bool MetroMapMainWindow::trySaveMap(const QString& fileName)
     return false;
   }
   return true;
+}
+
+void MetroMapMainWindow::slotMapChanged()
+{
+  foreach (QLabel* each, statusBar()->findChildren<QLabel*>()) {
+    if (each != 0) {
+      if (each->objectName() == "map_name") { each->setText(QString("%1: %2").arg(QObject::tr("Map file")).arg(m_mapFileName)); }
+    }
+  }
 }
 
 void MetroMapMainWindow::showErrorMessage(const QString& error)
@@ -211,6 +279,8 @@ void MetroMapMainWindow::slotCloseMap()
   m_mapFileName.clear();
   m_map.reset(new Map());
   m_needSaveMap = false;
+
+  enableMenuActions(false);
 
   emit mapChanged();
 }

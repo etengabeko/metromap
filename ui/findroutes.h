@@ -26,11 +26,15 @@ signals:
   void routeCreated(const QList<quint32>& route);
 
 private slots:
-  void slotCalcRoute();
   void slotMapChanged();
+  void slotCalcRoute();
+  void slotAddMediateStation();
+  void slotRemoveMediateStation();
 
 private:
   bool isMinimizeCrossovers() const;
+
+  void init();
 
 private:
   Ui::FindRoutesWidget* m_ui;

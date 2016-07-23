@@ -41,18 +41,22 @@ private slots:
   void slotSaveMap();
   void slotSaveAsMap();
   void slotCloseMap();
+  void slotMapChanged();
 
 private:
   void closeEvent(QCloseEvent* event);
 
   void createMenu();
   void createDockWidgets();
+  void createStatusBar();
   void createCentralWidget();
 
   bool trySaveMap();
   bool trySaveMap(const QString& fileName);
 
   void showErrorMessage(const QString& error);
+
+  void enableMenuActions(bool isMapOpen);
 
 private:
   Ui::MetroMapWidget* m_ui;

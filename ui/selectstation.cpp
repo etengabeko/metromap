@@ -84,6 +84,9 @@ void SelectStationWidget::slotNameChanged()
       }
     }
   }
+  else {
+    m_currentStation = 0;
+  }
 }
 
 void SelectStationWidget::slotSelectStation(quint32 id)
