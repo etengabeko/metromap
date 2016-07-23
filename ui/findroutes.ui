@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
- <class>RoutesWidget</class>
- <widget class="QWidget" name="RoutesWidget">
+ <class>FindRoutesWidget</class>
+ <widget class="QWidget" name="FindRoutesWidget">
   <property name="geometry">
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>315</width>
-    <height>133</height>
+    <width>308</width>
+    <height>135</height>
    </rect>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
@@ -64,7 +64,7 @@
      <item>
       <widget class="QPushButton" name="calcButton">
        <property name="text">
-        <string>Show</string>
+        <string>Calculate</string>
        </property>
       </widget>
      </item>

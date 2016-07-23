@@ -1,16 +1,16 @@
-#include "routeswidget.h"
-#include "ui_routeswidget.h"
+#include "findroutes.h"
+#include "ui_findroutes.h"
 
 #include "metromapmainwindow.h"
-#include "selectstationwidget.h"
+#include "selectstation.h"
 
 #include <map/map.h>
 
 namespace metro {
 
-RoutesWidget::RoutesWidget(MetroMapMainWindow* ctrl, QWidget* parent) :
+FindRoutesWidget::FindRoutesWidget(MetroMapMainWindow* ctrl, QWidget* parent) :
   QWidget(parent),
-  m_ui(new Ui::RoutesWidget()),
+  m_ui(new Ui::FindRoutesWidget()),
   m_controller(ctrl)
 {
   Q_CHECK_PTR(m_controller);
@@ -34,13 +34,13 @@ RoutesWidget::RoutesWidget(MetroMapMainWindow* ctrl, QWidget* parent) :
   connect(m_controller, SIGNAL(mapChanged()), SLOT(slotMapChanged()));
 }
 
-RoutesWidget::~RoutesWidget()
+FindRoutesWidget::~FindRoutesWidget()
 {
   delete m_ui;
   m_ui = 0;
 }
 
-void RoutesWidget::slotCalcRoute()
+void FindRoutesWidget::slotCalcRoute()
 {
   quint32 from = 0,
           to = 0;
@@ -84,7 +84,7 @@ void RoutesWidget::slotCalcRoute()
   emit routeCreated(route);
 }
 
-void RoutesWidget::slotMapChanged()
+void FindRoutesWidget::slotMapChanged()
 {
   m_stations = SelectStationWidget::getStationsByLines(m_controller->map());
 
@@ -95,7 +95,7 @@ void RoutesWidget::slotMapChanged()
   }
 }
 
-bool RoutesWidget::isMinimizeCrossovers() const
+bool FindRoutesWidget::isMinimizeCrossovers() const
 {
   return m_ui->crossoversCheckBox->isChecked();
 }

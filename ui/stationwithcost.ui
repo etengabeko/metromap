@@ -44,9 +44,9 @@
  </widget>
  <customwidgets>
   <customwidget>
-   <class>SelectStationWidget</class>
+   <class>metro::SelectStationWidget</class>
    <extends>QWidget</extends>
-   <header>ui/selectstationwidget.h</header>
+   <header>ui/selectstation.h</header>
   </customwidget>
  </customwidgets>
  <resources/>

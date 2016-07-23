@@ -1,23 +1,23 @@
-#ifndef METROMAP_UI_STATIONWIDGET_H
-#define METROMAP_UI_STATIONWIDGET_H
+#ifndef METROMAP_UI_STATIONINFO_H
+#define METROMAP_UI_STATIONINFO_H
 
 #include <QWidget>
 
 namespace Ui {
-  class StationWidget;
+  class StationInfoWidget;
 } // Ui
 
 namespace metro {
 
 class MetroMapMainWindow;
 
-class StationWidget : public QWidget
+class StationInfoWidget : public QWidget
 {
   Q_OBJECT
 
 public:
-  explicit StationWidget(MetroMapMainWindow* ctrl, QWidget *parent = 0);
-  ~StationWidget();
+  explicit StationInfoWidget(MetroMapMainWindow* ctrl, QWidget *parent = 0);
+  ~StationInfoWidget();
 
 public slots:
   void slotStationSelected(quint32 id);
@@ -32,7 +32,7 @@ private:
   void setShowMode();
 
 private:
-  Ui::StationWidget* m_ui;
+  Ui::StationInfoWidget* m_ui;
 
   MetroMapMainWindow* m_controller;
 

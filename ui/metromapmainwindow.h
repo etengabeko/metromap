@@ -15,8 +15,8 @@ namespace metro {
 
 class Map;
 class MapView;
-class RoutesWidget;
-class StationWidget;
+class FindRoutesWidget;
+class StationInfoWidget;
 
 class MetroMapMainWindow : public QMainWindow
 {
@@ -58,8 +58,8 @@ private:
   Ui::MetroMapWidget* m_ui;
 
   MapView* m_mapview;
-  RoutesWidget* m_routes;
-  StationWidget* m_station;
+  FindRoutesWidget* m_routes;
+  StationInfoWidget* m_station;
 
   QScopedPointer<Map> m_map;
   QString m_mapFileName;

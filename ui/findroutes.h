@@ -1,5 +1,5 @@
-#ifndef METROMAP_UI_ROUTESWIDGET_H
-#define METROMAP_UI_ROUTESWIDGET_H
+#ifndef METROMAP_UI_FINDROUTES_H
+#define METROMAP_UI_FINDROUTES_H
 
 #include <QMultiMap>
 #include <QPair>
@@ -7,20 +7,20 @@
 #include <QWidget>
 
 namespace Ui {
-  class RoutesWidget;
+  class FindRoutesWidget;
 } // Ui
 
 namespace metro {
 
 class MetroMapMainWindow;
 
-class RoutesWidget : public QWidget
+class FindRoutesWidget : public QWidget
 {
   Q_OBJECT
 
 public:
-  explicit RoutesWidget(MetroMapMainWindow* ctrl, QWidget* parent = 0);
-  ~RoutesWidget();
+  explicit FindRoutesWidget(MetroMapMainWindow* ctrl, QWidget* parent = 0);
+  ~FindRoutesWidget();
 
 signals:
   void routeCreated(const QList<quint32>& route);
@@ -33,7 +33,7 @@ private:
   bool isMinimizeCrossovers() const;
 
 private:
-  Ui::RoutesWidget* m_ui;
+  Ui::FindRoutesWidget* m_ui;
 
   MetroMapMainWindow* m_controller;
 
@@ -43,4 +43,4 @@ private:
 
 } // metro
 
-#endif // METROMAP_UI_ROUTESWIDGET_H
+#endif // METROMAP_UI_FINDROUTES_H

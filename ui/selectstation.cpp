@@ -1,5 +1,5 @@
-#include "selectstationwidget.h"
-#include "ui_selectstationwidget.h"
+#include "selectstation.h"
+#include "ui_selectstation.h"
 
 #include "selectstationdialog.h"
 

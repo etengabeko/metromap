@@ -2,8 +2,8 @@
 #include "ui_metromapmainwindow.h"
 
 #include "mapview.h"
-#include "routeswidget.h"
-#include "stationwidget.h"
+#include "findroutes.h"
+#include "stationinfo.h"
 
 #include <exception/exception.h>
 #include <map/map.h>
@@ -80,13 +80,13 @@ void MetroMapMainWindow::createDockWidgets()
 {
   QDockWidget* dock = new QDockWidget(QObject::tr("Station Info"), this);
   dock->setAllowedAreas(Qt::LeftDockWidgetArea | Qt::RightDockWidgetArea);
-  m_station = new StationWidget(this, dock);
+  m_station = new StationInfoWidget(this, dock);
   dock->setWidget(m_station);
   addDockWidget(Qt::RightDockWidgetArea, dock);
 
   dock = new QDockWidget(QObject::tr("Routes"), this);
   dock->setAllowedAreas(Qt::TopDockWidgetArea | Qt::BottomDockWidgetArea);
-  m_routes = new RoutesWidget(this, dock);
+  m_routes = new FindRoutesWidget(this, dock);
   dock->setWidget(m_routes);
   addDockWidget(Qt::BottomDockWidgetArea, dock);
 }

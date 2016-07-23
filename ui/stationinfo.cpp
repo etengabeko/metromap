@@ -1,5 +1,5 @@
-#include "stationwidget.h"
-#include "ui_stationwidget.h"
+#include "stationinfo.h"
+#include "ui_stationinfo.h"
 
 #include "metromapmainwindow.h"
 #include "stationwithcost.h"
@@ -9,9 +9,9 @@
 
 namespace metro {
 
-StationWidget::StationWidget(MetroMapMainWindow* ctrl, QWidget* parent) :
+StationInfoWidget::StationInfoWidget(MetroMapMainWindow* ctrl, QWidget* parent) :
   QWidget(parent),
-  m_ui(new Ui::StationWidget()),
+  m_ui(new Ui::StationInfoWidget()),
   m_controller(ctrl),
   m_lockMode(true),
   m_currentStation(0)
@@ -26,13 +26,13 @@ StationWidget::StationWidget(MetroMapMainWindow* ctrl, QWidget* parent) :
   connect(m_ui->lockButton, SIGNAL(clicked()), SLOT(slotChangeMode()));
 }
 
-StationWidget::~StationWidget()
+StationInfoWidget::~StationInfoWidget()
 {
   delete m_ui;
   m_ui = 0;
 }
 
-void StationWidget::slotStationSelected(quint32 id)
+void StationInfoWidget::slotStationSelected(quint32 id)
 {
   clear();
   setShowMode();
@@ -71,12 +71,15 @@ void StationWidget::slotStationSelected(quint32 id)
   }
 }
 
-void StationWidget::slotMapChanged()
+void StationInfoWidget::slotMapChanged()
 {
+  if (!m_ui->lockButton->isEnabled()) {
+    m_ui->lockButton->setEnabled(true);
+  }
   clear();
 }
 
-void StationWidget::clear()
+void StationInfoWidget::clear()
 {
   m_currentStation = 0;
   m_ui->nameLineEdit->clear();
@@ -91,7 +94,7 @@ void StationWidget::clear()
   }
 }
 
-void StationWidget::slotChangeMode()
+void StationInfoWidget::slotChangeMode()
 {
   if (m_lockMode) {
     setEditMode();
@@ -102,7 +105,7 @@ void StationWidget::slotChangeMode()
   m_lockMode = !m_lockMode;
 }
 
-void StationWidget::setEditMode()
+void StationInfoWidget::setEditMode()
 {
   m_ui->lockButton->setText(QObject::tr("Save"));
   m_ui->nameLineEdit->setReadOnly(false);
@@ -121,6 +124,7 @@ void StationWidget::setEditMode()
   foreach (quint32 each, m_controller->map().linesId()) {
     lines.append(QString::number(each));
   }
+  qSort(lines);
   m_ui->lineComboBox->addItems(lines);
 
   if (   m_currentStation > 0
@@ -135,7 +139,7 @@ void StationWidget::setEditMode()
   }
 }
 
-void StationWidget::setShowMode()
+void StationInfoWidget::setShowMode()
 {
   m_ui->lockButton->setText(QObject::tr("Edit"));
   m_ui->nameLineEdit->setReadOnly(true);

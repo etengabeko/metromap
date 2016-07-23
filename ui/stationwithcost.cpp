@@ -1,7 +1,7 @@
 #include "stationwithcost.h"
 #include "ui_stationwithcost.h"
 
-#include "selectstationwidget.h"
+#include "selectstation.h"
 
 namespace metro {
 
