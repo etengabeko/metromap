@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>274</width>
-    <height>210</height>
+    <width>264</width>
+    <height>200</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -15,7 +15,7 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <widget class="QPlainTextEdit" name="debugTextEdit"/>
+    <widget class="QGraphicsView" name="view"/>
    </item>
   </layout>
  </widget>

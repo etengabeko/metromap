@@ -24,6 +24,7 @@ public:
 
 signals:
   void routeCreated(const QList<quint32>& route);
+  void stationSelected(quint32 id);
 
 private slots:
   void slotMapChanged();

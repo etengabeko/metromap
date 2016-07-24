@@ -22,13 +22,14 @@ public:
   ~MapView();
 
 public slots:
+  void slotSelectStations(quint32 id);
   void slotSelectStations(const QList<quint32>& stations);
 
 private slots:
   void slotMapChanged();
 
 private:
-  void debugString(const QString& str);
+  void initScene();
 
 private:
   Ui::MapView* m_ui;

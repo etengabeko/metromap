@@ -37,10 +37,12 @@ void FindRoutesWidget::init()
   SelectStationWidget* from = new SelectStationWidget(this);
   from->setObjectName("from");
   from->setPlaceholderText(QObject::tr("From"));
+  connect(from, SIGNAL(stationSelected(quint32)), this, SIGNAL(stationSelected(quint32)));
 
   SelectStationWidget* to = new SelectStationWidget(this);
   to->setObjectName("to");
   to->setPlaceholderText(QObject::tr("To"));
+  connect(to, SIGNAL(stationSelected(quint32)), this, SIGNAL(stationSelected(quint32)));
 
   ManageButtons* mb = new ManageButtons(this);
   connect(mb, SIGNAL(addClicked()), SLOT(slotAddMediateStation()));
@@ -64,6 +66,7 @@ void FindRoutesWidget::slotAddMediateStation()
 
   SelectStationWidget* newSw = new SelectStationWidget(this);
   newSw->setPlaceholderText(QObject::tr("Through"));
+  connect(newSw, SIGNAL(stationSelected(quint32)), this, SIGNAL(stationSelected(quint32)));
   newSw->setStations(&m_stations);
 
   ManageButtons* newMb = new ManageButtons(newSw);

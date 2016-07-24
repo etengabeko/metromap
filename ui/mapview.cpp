@@ -2,12 +2,18 @@
 #include "ui_mapview.h"
 
 #include "metromapmainwindow.h"
+#include "stationitem.h"
 
 #include <map/map.h>
 #include <station/station.h>
 
+#include <QGraphicsProxyWidget>
+#include <QGraphicsScene>
+#include <QLabel>
 #include <QList>
-#include <QTime>
+#include <QPointF>
+
+#include <QDebug>
 
 namespace metro {
 
@@ -20,6 +26,8 @@ MapView::MapView(MetroMapMainWindow* ctrl, QWidget* parent) :
 
   m_ui->setupUi(this);
 
+  initScene();
+
   connect(m_controller, SIGNAL(mapChanged()), SLOT(slotMapChanged()));
 }
 
@@ -29,32 +37,38 @@ MapView::~MapView()
   m_ui = 0;
 }
 
+void MapView::initScene()
+{
+  QGraphicsScene* scene = new QGraphicsScene(this);
+  m_ui->view->setScene(scene);
+}
+
+void MapView::slotSelectStations(quint32 id)
+{
+  slotSelectStations(QList<quint32>() << id);
+}
+
 void MapView::slotSelectStations(const QList<quint32>& stations)
 {
   // TODO
-  QStringList tmp;
-
   QListIterator<quint32> it(stations);
+  qreal vstep = 30.0;
+  QPointF pos = QPointF(0.0, 0.0);
   while (it.hasNext()) {
     quint32 id = it.next();
     if (m_controller->map().containsStation(id)) {
-      tmp.append(QString("%1").arg(m_controller->map().stationById(id).name()));
+      StationItem* item = new StationItem(id, pos);
+      item->setStationName(m_controller->map().stationById(id).name());
+      m_ui->view->scene()->addItem(item);
+      pos.setY(pos.y() + vstep);
     }
   }
-  debugString(tmp.join(" => "));
-}
-
-void MapView::debugString(const QString& str)
-{
-  QString content = m_ui->debugTextEdit->toPlainText();
-  content += QString("%1: %2\n").arg(QTime::currentTime().toString("hh:mm:ss")).arg(str);
-  m_ui->debugTextEdit->setPlainText(content);
 }
 
 void MapView::slotMapChanged()
 {
   // TODO
-  m_ui->debugTextEdit->clear();
+
 }
 
 } // metro

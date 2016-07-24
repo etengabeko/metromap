@@ -17,6 +17,7 @@ HEADERS = \
   ui/selectstation.h         \
   ui/selectstationdialog.h   \
   ui/stationinfo.h           \
+  ui/stationitem.h           \
   ui/stationwithcost.h
 
 SOURCES = \
@@ -29,6 +30,7 @@ SOURCES = \
   ui/selectstation.cpp       \
   ui/selectstationdialog.cpp \
   ui/stationinfo.cpp         \
+  ui/stationitem.cpp         \
   ui/stationwithcost.cpp     \
   app/main.cpp
 

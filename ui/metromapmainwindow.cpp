@@ -59,6 +59,7 @@ void MetroMapMainWindow::init()
   connect(this, SIGNAL(mapChanged()), SLOT(slotMapChanged()));
   //TODO init connections
   connect(m_routes, SIGNAL(routeCreated(const QList<quint32>&)), m_mapview, SLOT(slotSelectStations(const QList<quint32>&)));
+  connect(m_routes, SIGNAL(stationSelected(quint32)), m_mapview, SLOT(slotSelectStations(quint32)));
 }
 
 bool MetroMapMainWindow::isMapChanged() const
