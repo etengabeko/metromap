@@ -9,7 +9,7 @@
 
 namespace {
 
-QBrush selectedBrush() { return QBrush(QColor(Qt::yellow), Qt::DiagCrossPattern); }
+QBrush selectedBrush() { return QBrush(QColor(Qt::yellow), Qt::SolidPattern); }
 QBrush unselectedBrush() { return QBrush(QColor(Qt::white), Qt::SolidPattern); }
 
 }

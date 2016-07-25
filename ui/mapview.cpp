@@ -8,6 +8,7 @@
 #include <station/station.h>
 
 #include <QAction>
+#include <QColor>
 #include <QContextMenuEvent>
 #include <QGraphicsLineItem>
 #include <QGraphicsScene>
@@ -18,8 +19,24 @@
 #include <QMouseEvent>
 #include <QPair>
 #include <QPointF>
+#include <QSettings>
 
 #include <QDebug>
+
+namespace {
+
+QString settingsFileName() { return QString("%1/../etc/metromap.conf").arg(qApp->applicationDirPath()); }
+
+int getLineWidth() { return 3; }
+
+QColor getLineColor(quint32 line)
+{
+  QSettings settings(settingsFileName(), QSettings::IniFormat);
+  QString colorName = settings.value(QString("line_colors/%1").arg(line), QString("gray")).toString();
+  return QColor(colorName);
+}
+
+}
 
 namespace metro {
 
@@ -166,10 +183,18 @@ void MapView::slotMapChanged()
   const qreal vstep = StationItem::stationEllipseRadius()*4;
   const qreal hstep = vstep*4;
 
-  foreach (quint32 id, m_controller->map().stationsId()) {
-    const Station& each = m_controller->map().stationById(id);
+  QList<quint32> allStations = m_controller->map().stationsId();
+  qSort(allStations);
+  QListIterator<quint32> it(allStations);
+  while (it.hasNext()) {
+    const Station& each = m_controller->map().stationById(it.next());
     QPointF eachPos(pos.x() + each.line()*hstep, pos.y() + stationsOnLines[each.line()]*vstep);
     StationItem* item = new StationItem(each.id(), eachPos);
+    QColor clr = ::getLineColor(each.line());
+    QPen p;
+    p.setColor(clr);
+    p.setWidth(::getLineWidth());
+    item->setPen(p);
     item->setStationName(each.name());
     m_ui->view->scene()->addItem(item);
     stationsOnLines[each.line()] += 1;

@@ -44,4 +44,10 @@ FORMS += \
   ui/stationinfo.ui          \
   ui/stationwithcost.ui
 
-OTHER_FILES = testfiles/*.json
+CONF_FILES = etc/*.conf
+conf.files = $$CONF_FILES
+conf.path = $$BUILD_DIR/etc
+INSTALLS += conf
+
+OTHER_FILES = testfiles/*.json \
+              $$CONF_FILES
