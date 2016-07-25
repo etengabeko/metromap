@@ -20,9 +20,16 @@ public:
 
   quint32 id() const;
 
-  static QRectF stationRect(const QPointF& topleft);
+  void selectStation(bool selected);
+  bool isSelectedStation() const;
 
-private:
+  QPointF coordTop() const;
+  QPointF coordBottom() const;
+  QPointF coordLeft() const;
+  QPointF coordRight() const;
+
+  static qreal stationEllipseRadius();
+  static QRectF stationRect(const QPointF& topleft);
 
 private:
   quint32 m_id;

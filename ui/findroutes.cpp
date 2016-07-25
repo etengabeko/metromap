@@ -171,4 +171,33 @@ bool FindRoutesWidget::isMinimizeCrossovers() const
   return m_ui->crossoversCheckBox->isChecked();
 }
 
+void FindRoutesWidget::slotSelectFrom(quint32 id)
+{
+  foreach (SelectStationWidget* each, m_ui->stationsGroupBox->findChildren<SelectStationWidget*>()) {
+    if (each != 0 && each->objectName() == "from") {
+      each->slotSelectStation(id);
+      break;
+    }
+  }
+}
+
+void FindRoutesWidget::slotSelectTo(quint32 id)
+{
+  foreach (SelectStationWidget* each, m_ui->stationsGroupBox->findChildren<SelectStationWidget*>()) {
+    if (each != 0 && each->objectName() == "to") {
+      each->slotSelectStation(id);
+      break;
+    }
+  }
+}
+
+void FindRoutesWidget::slotDeselect(quint32 id)
+{
+  foreach (SelectStationWidget* each, m_ui->stationsGroupBox->findChildren<SelectStationWidget*>()) {
+    if (each != 0 && each->selectedStation() == id) {
+      each->slotSelectStation(0);
+    }
+  }
+}
+
 } // metro

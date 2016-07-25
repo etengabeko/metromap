@@ -1,6 +1,9 @@
 #ifndef METROMAP_UI_STATIONINFO_H
 #define METROMAP_UI_STATIONINFO_H
 
+#include <QMultiMap>
+#include <QPair>
+#include <QString>
 #include <QWidget>
 
 namespace Ui {
@@ -19,15 +22,19 @@ public:
   explicit StationInfoWidget(MetroMapMainWindow* ctrl, QWidget *parent = 0);
   ~StationInfoWidget();
 
+signals:
+  void editModeActivated();
+  void showModeActivated();
+
 public slots:
   void slotStationSelected(quint32 id);
+  void slotClear();
 
 private slots:
   void slotMapChanged();
   void slotChangeMode();
 
 private:
-  void clear();
   void setEditMode();
   void setShowMode();
 
@@ -35,6 +42,8 @@ private:
   Ui::StationInfoWidget* m_ui;
 
   MetroMapMainWindow* m_controller;
+
+  QMultiMap<quint32, QPair<quint32, QString> > m_stations;
 
   bool m_lockMode;
   quint32 m_currentStation;

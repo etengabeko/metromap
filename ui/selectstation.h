@@ -28,6 +28,7 @@ public:
   quint32 selectedStation() const;
 
   void setPlaceholderText(const QString& str);
+  void setReadOnly(bool readOnly);
 
   void setStations(QMultiMap<quint32, QPair<quint32, QString> >* stations);
 

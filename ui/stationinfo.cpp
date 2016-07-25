@@ -2,10 +2,13 @@
 #include "ui_stationinfo.h"
 
 #include "metromapmainwindow.h"
+#include "selectstation.h"
 #include "stationwithcost.h"
 
 #include <map/map.h>
 #include <station/station.h>
+
+#include <QBoxLayout>
 
 namespace metro {
 
@@ -28,13 +31,15 @@ StationInfoWidget::StationInfoWidget(MetroMapMainWindow* ctrl, QWidget* parent) 
 
 StationInfoWidget::~StationInfoWidget()
 {
+  slotClear();
+
   delete m_ui;
   m_ui = 0;
 }
 
 void StationInfoWidget::slotStationSelected(quint32 id)
 {
-  clear();
+  slotClear();
   setShowMode();
 
   if (m_controller->map().containsStation(id)) {
@@ -47,12 +52,14 @@ void StationInfoWidget::slotStationSelected(quint32 id)
       bool ok = false;
       qint32 cost = currentStation.minimumCostTo(id, 0, &ok);
       if (ok) {
-        StationWithCost* sc = new StationWithCost(this);
+        StationWithCost* sc = new StationWithCost(&m_stations, this);
+        sc->setReadOnly(true);
         sc->setStation(id);
         sc->setCost(cost);
-        QLayoutItem* spacer = m_ui->nextGroupBox->layout()->itemAt(m_ui->nextGroupBox->layout()->count()-1);
-        m_ui->nextGroupBox->layout()->addWidget(sc);
-        m_ui->nextGroupBox->layout()->addItem(spacer);
+        QBoxLayout* lo = qobject_cast<QBoxLayout*>(m_ui->nextGroupBox->layout());
+        if (lo != 0) {
+          lo->insertWidget(lo->count()-1, sc);
+        }
       }
     }
 
@@ -60,12 +67,14 @@ void StationInfoWidget::slotStationSelected(quint32 id)
       bool ok = false;
       qint32 cost = currentStation.minimumCostTo(id, 0, &ok);
       if (ok) {
-        StationWithCost* sc = new StationWithCost(this);
+        StationWithCost* sc = new StationWithCost(&m_stations, this);
+        sc->setReadOnly(true);
         sc->setStation(id);
         sc->setCost(cost);
-        QLayoutItem* spacer = m_ui->crossoverGroupBox->layout()->itemAt(m_ui->crossoverGroupBox->layout()->count()-1);
-        m_ui->crossoverGroupBox->layout()->addWidget(sc);
-        m_ui->crossoverGroupBox->layout()->addItem(spacer);
+        QBoxLayout* lo = qobject_cast<QBoxLayout*>(m_ui->crossoverGroupBox->layout());
+        if (lo != 0) {
+          lo->insertWidget(lo->count()-1, sc);
+        }
       }
     }
   }
@@ -76,10 +85,12 @@ void StationInfoWidget::slotMapChanged()
   if (!m_ui->lockButton->isEnabled()) {
     m_ui->lockButton->setEnabled(true);
   }
-  clear();
+  slotClear();
+
+  m_stations = SelectStationWidget::getStationsByLines(m_controller->map());
 }
 
-void StationInfoWidget::clear()
+void StationInfoWidget::slotClear()
 {
   m_currentStation = 0;
   m_ui->nameLineEdit->clear();
@@ -117,15 +128,22 @@ void StationInfoWidget::setEditMode()
           btn->setEnabled(true);
         }
       }
+      foreach (StationWithCost* sc, box->findChildren<StationWithCost*>()) {
+        if (sc != 0) {
+          sc->setReadOnly(false);
+        }
+      }
     }
   }
 
-  QStringList lines;
-  foreach (quint32 each, m_controller->map().linesId()) {
-    lines.append(QString::number(each));
+  if (m_ui->lineComboBox->count() == 0) {
+    QStringList lines;
+    foreach (quint32 each, m_controller->map().linesId()) {
+      lines.append(QString::number(each));
+    }
+    qSort(lines);
+    m_ui->lineComboBox->addItems(lines);
   }
-  qSort(lines);
-  m_ui->lineComboBox->addItems(lines);
 
   if (   m_currentStation > 0
       && m_controller->map().containsStation(m_currentStation)) {
@@ -137,6 +155,7 @@ void StationInfoWidget::setEditMode()
       m_ui->lineComboBox->setCurrentIndex(0);
     }
   }
+  emit editModeActivated();
 }
 
 void StationInfoWidget::setShowMode()
@@ -152,7 +171,14 @@ void StationInfoWidget::setShowMode()
         }
       }
     }
+    foreach (StationWithCost* sc, box->findChildren<StationWithCost*>()) {
+      if (sc != 0) {
+        sc->setReadOnly(true);
+      }
+    }
+
   }
+  emit showModeActivated();
 }
 
 } // metro

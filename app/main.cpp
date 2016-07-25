@@ -12,13 +12,15 @@ int main(int argc, char* argv[])
 
   try {
     metro::MetroMapMainWindow mainwindow;
-    mainwindow.init();
     mainwindow.show();
 
-    return app.exec();
+    if (mainwindow.init()) {
+      return app.exec();
+    }
   }
   catch (metro::Exception& e) {
     qDebug() << e.what();
     return EXIT_FAILURE;
   }
+  return EXIT_FAILURE;
 }

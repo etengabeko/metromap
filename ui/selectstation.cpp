@@ -42,6 +42,12 @@ void SelectStationWidget::setPlaceholderText(const QString& str)
   m_ui->nameLineEdit->setPlaceholderText(str);
 }
 
+void SelectStationWidget::setReadOnly(bool readOnly)
+{
+  m_ui->nameLineEdit->setReadOnly(readOnly);
+  m_ui->advancedButton->setEnabled(!readOnly);
+}
+
 void SelectStationWidget::setStations(QMultiMap<quint32, QPair<quint32, QString> >* stations)
 {
   m_ui->nameLineEdit->clear();

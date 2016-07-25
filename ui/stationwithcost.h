@@ -3,6 +3,8 @@
 
 #include <QWidget>
 
+template <typename K, typename V> class QMultiMap;
+
 namespace Ui {
 class StationWithCost;
 } // Ui
@@ -14,11 +16,13 @@ class StationWithCost : public QWidget
   Q_OBJECT
 
 public:
-  explicit StationWithCost(QWidget* parent = 0);
+  explicit StationWithCost(QMultiMap<quint32, QPair<quint32, QString> >* stations, QWidget* parent = 0);
   ~StationWithCost();
 
   void setStation(quint32 id);
   void setCost(qint32 cost);
+
+  void setReadOnly(bool readOnly);
 
 signals:
   void removeClicked();

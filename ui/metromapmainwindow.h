@@ -26,7 +26,7 @@ public:
   explicit MetroMapMainWindow(QWidget* parent = 0);
   ~MetroMapMainWindow();
 
-  void init();
+  bool init();
 
   bool isMapChanged() const;
 
@@ -42,6 +42,7 @@ private slots:
   void slotSaveAsMap();
   void slotCloseMap();
   void slotMapChanged();
+  void slotShowStationInfo(quint32 id);
 
 private:
   void closeEvent(QCloseEvent* event);

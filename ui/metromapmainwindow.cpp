@@ -13,11 +13,14 @@
 #include <QApplication>
 #include <QCloseEvent>
 #include <QDockWidget>
+#include <QDialog>
 #include <QFileDialog>
 #include <QLabel>
+#include <QLayout>
 #include <QMenu>
 #include <QMenuBar>
 #include <QMessageBox>
+#include <QPushButton>
 #include <QRegExp>
 #include <QStatusBar>
 
@@ -25,7 +28,7 @@ namespace {
 
 QString mapFileNameFilter() { return "JSON files (*.json);;All files (*)"; }
 
-QString mapFilePath() { return qApp->applicationDirPath(); }
+QString mapFilePath() { return QString("%1/../../testfiles").arg(qApp->applicationDirPath()); }
 
 }
 
@@ -40,6 +43,25 @@ MetroMapMainWindow::MetroMapMainWindow(QWidget* parent) :
   m_needSaveMap(false)
 {
   m_ui->setupUi(this);
+
+  createMenu();
+  createDockWidgets();
+  createStatusBar();
+  createCentralWidget();
+
+  menuBar()->addAction(QObject::tr("Quit"), this, SLOT(close()));
+  connect(this, SIGNAL(mapChanged()), SLOT(slotMapChanged()));
+
+  connect(m_routes, SIGNAL(routeCreated(const QList<quint32>&)), m_mapview, SLOT(slotSelectStations(const QList<quint32>&)));
+  connect(m_routes, SIGNAL(stationSelected(quint32)), m_mapview, SLOT(slotSelectStations(quint32)));
+  connect(m_mapview, SIGNAL(fromSelected(quint32)), m_routes, SLOT(slotSelectFrom(quint32)));
+  connect(m_mapview, SIGNAL(toSelected(quint32)), m_routes, SLOT(slotSelectTo(quint32)));
+  connect(m_mapview, SIGNAL(stationSelected(quint32)), m_station, SLOT(slotStationSelected(quint32)));
+  connect(m_mapview, SIGNAL(stationDeselected(quint32)), m_station, SLOT(slotClear()));
+  connect(m_mapview, SIGNAL(stationDeselected(quint32)), m_routes, SLOT(slotDeselect(quint32)));
+  connect(m_mapview, SIGNAL(stationEdited(quint32)), SLOT(slotShowStationInfo(quint32)));
+  connect(m_station, SIGNAL(editModeActivated()), m_mapview, SLOT(slotToEditMode()));
+  connect(m_station, SIGNAL(showModeActivated()), m_mapview, SLOT(slotToShowMode()));
 }
 
 MetroMapMainWindow::~MetroMapMainWindow()
@@ -48,19 +70,28 @@ MetroMapMainWindow::~MetroMapMainWindow()
   m_ui = 0;
 }
 
-void MetroMapMainWindow::init()
+bool MetroMapMainWindow::init()
 {
-  createMenu();
-  createDockWidgets();
-  createStatusBar();
-  createCentralWidget();
+  QDialog dlg(this);
+  dlg.setSizePolicy(QSizePolicy::Fixed, QSizePolicy::Fixed);
+  dlg.setLayout(new QVBoxLayout(&dlg));
+  QPushButton* newBtn = new QPushButton(QObject::tr("Create map"), &dlg);
+  QPushButton* openBtn = new QPushButton(QObject::tr("Open map"), &dlg);
+  dlg.layout()->addWidget(openBtn);
+  dlg.layout()->addWidget(newBtn);
+  connect(newBtn, SIGNAL(clicked()), SLOT(slotCreateMap()));
+  connect(openBtn, SIGNAL(clicked()), SLOT(slotLoadMap()));
+  connect(newBtn, SIGNAL(clicked()), &dlg, SLOT(accept()));
+  connect(openBtn, SIGNAL(clicked()), &dlg, SLOT(accept()));
 
-  menuBar()->addAction(QObject::tr("Quit"), this, SLOT(close()));
-  connect(this, SIGNAL(mapChanged()), SLOT(slotMapChanged()));
-  //TODO init connections
-  connect(m_routes, SIGNAL(routeCreated(const QList<quint32>&)), m_mapview, SLOT(slotSelectStations(const QList<quint32>&)));
-  connect(m_routes, SIGNAL(stationSelected(quint32)), m_mapview, SLOT(slotSelectStations(quint32)));
+  int res = -1;
+  do {
+    res = dlg.exec();
+  } while (m_map.isNull());
+
+  return res == QDialog::Accepted;
 }
+
 
 bool MetroMapMainWindow::isMapChanged() const
 {
@@ -286,20 +317,29 @@ void MetroMapMainWindow::slotCloseMap()
   emit mapChanged();
 }
 
+void MetroMapMainWindow::slotShowStationInfo(quint32 id)
+{
+  Q_UNUSED(id);
+
+  QDockWidget* dock = qobject_cast<QDockWidget*>(m_station->parent());
+  if (dock != 0 && dock->isHidden()) {
+    dock->setHidden(false);
+  }
+}
+
 void MetroMapMainWindow::closeEvent(QCloseEvent* event)
 {
-  slotCloseMap();
-
-  if (m_needSaveMap) {
-    event->ignore();
-    return;
-  }
-
   QMessageBox::StandardButton answer = QMessageBox::information(this, QObject::tr("Confirm quit"),
                                                                 QObject::tr("You really want to quit?"),
                                                                 QMessageBox::Yes | QMessageBox::No,
                                                                 QMessageBox::Yes);
   if (answer == QMessageBox::No) {
+    event->ignore();
+    return;
+  }
+
+  slotCloseMap();
+  if (m_needSaveMap) {
     event->ignore();
     return;
   }
