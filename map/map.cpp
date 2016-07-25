@@ -170,7 +170,7 @@ QList<Map::StationIterator> Map::findDijkstraPath(const StationIterator& from, c
         nearest = &each;
       }
       if (nearest == 0) {
-        break;
+        continue;
       }
       if (isinf(dist[*nearest].cost) != 0) {
         continue;
