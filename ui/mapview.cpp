@@ -35,6 +35,8 @@ MapView::MapView(MetroMapMainWindow* ctrl, QWidget* parent) :
 
   m_ui->setupUi(this);
 
+  m_ui->routeGroupBox->hide();
+
   initScene();
 
   m_ui->view->viewport()->installEventFilter(this);
@@ -78,6 +80,44 @@ void MapView::slotSelectStations(const QList<quint32>& stations)
       }
     }
   }
+  if (m_ui->routeGroupBox->isVisible()) {
+    m_ui->routeGroupBox->hide();
+  }
+}
+
+void MapView::slotShowRouteInfo(const QList<quint32>& stations)
+{
+  slotSelectStations(stations);
+
+  if (!m_ui->routeGroupBox->isVisible()) {
+    m_ui->routeGroupBox->show();
+  }
+
+  qint32 totalCost = 0;
+  int railtracks = 0;
+  int crossovers = 0;
+
+  for (QList<quint32>::const_iterator it = stations.constBegin(), end = stations.constEnd(); it != end-1; ++it) {
+    if (   m_controller->map().containsStation(*it)
+        && m_controller->map().containsStation(*(it+1))) {
+      const Station& from = m_controller->map().stationById(*it);
+      const Station& to = m_controller->map().stationById(*(it+1));
+      bool ok = false;
+      qint32 cost = from.minimumCostTo(to.id(), 0, &ok);
+      if (ok == true) {
+        totalCost += cost;
+      }
+      if (from.railTracks().contains(to.id())) {
+        ++railtracks;
+      }
+      else if (from.crossOvers().contains(to.id())) {
+        ++crossovers;
+      }
+    }
+  }
+  m_ui->costLineEdit->setText(QString::number(totalCost));
+  m_ui->railtracksLineEdit->setText(QString::number(railtracks));
+  m_ui->crossoversLineEdit->setText(QString::number(crossovers));
 }
 
 void MapView::slotDeselectStation(quint32 id)

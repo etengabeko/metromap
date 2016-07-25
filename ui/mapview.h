@@ -37,6 +37,7 @@ signals:
 public slots:
   void slotSelectStations(quint32 id);
   void slotSelectStations(const QList<quint32>& stations);
+  void slotShowRouteInfo(const QList<quint32>& stations);
   void slotToShowMode();
   void slotToEditMode();
 

@@ -52,7 +52,7 @@ MetroMapMainWindow::MetroMapMainWindow(QWidget* parent) :
   menuBar()->addAction(QObject::tr("Quit"), this, SLOT(close()));
   connect(this, SIGNAL(mapChanged()), SLOT(slotMapChanged()));
 
-  connect(m_routes, SIGNAL(routeCreated(const QList<quint32>&)), m_mapview, SLOT(slotSelectStations(const QList<quint32>&)));
+  connect(m_routes, SIGNAL(routeCreated(const QList<quint32>&)), m_mapview, SLOT(slotShowRouteInfo(const QList<quint32>&)));
   connect(m_routes, SIGNAL(stationSelected(quint32)), m_mapview, SLOT(slotSelectStations(quint32)));
   connect(m_mapview, SIGNAL(fromSelected(quint32)), m_routes, SLOT(slotSelectFrom(quint32)));
   connect(m_mapview, SIGNAL(toSelected(quint32)), m_routes, SLOT(slotSelectTo(quint32)));
