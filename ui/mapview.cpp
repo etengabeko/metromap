@@ -205,13 +205,13 @@ bool MapView::eventFilter(QObject* watched, QEvent* event)
             if (answer != 0) {
               m_mode = EDIT;
               if (answer == add) {
-                qDebug() << "add";
+                qDebug() << "TODO add station";
               }
               else if (answer == edit) {
                 selectStation(item, me->pos());
               }
               else if (answer == remove) {
-                qDebug() << "remove";
+                qDebug() << QString("TODO remove #%1").arg(item->id());
               }
             }
           }

@@ -347,4 +347,22 @@ void MetroMapMainWindow::closeEvent(QCloseEvent* event)
   QMainWindow::closeEvent(event);
 }
 
+void MetroMapMainWindow::removeStation(quint32 id)
+{
+  if (!m_map.isNull()) {
+    m_map->removeStation(id);
+    m_needSaveMap = true;
+    emit mapChanged();
+  }
+}
+
+void MetroMapMainWindow::insertStation(const Station& station)
+{
+  if (!m_map.isNull()) {
+    m_map->insertStation(station);
+    m_needSaveMap = true;
+    emit mapChanged();
+  }
+}
+
 } // metro

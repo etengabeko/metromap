@@ -33,10 +33,15 @@ public slots:
 private slots:
   void slotMapChanged();
   void slotChangeMode();
+  void slotAddNextStation();
+  void slotAddCrossStation();
+  void slotRemoveNextStation();
+  void slotRemoveCrossStation();
 
 private:
   void setEditMode();
   void setShowMode();
+  void saveStation();
 
 private:
   Ui::StationInfoWidget* m_ui;

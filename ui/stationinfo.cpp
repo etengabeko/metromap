@@ -5,10 +5,14 @@
 #include "selectstation.h"
 #include "stationwithcost.h"
 
+#include <exception/exception.h>
 #include <map/map.h>
 #include <station/station.h>
 
 #include <QBoxLayout>
+#include <QMessageBox>
+
+#include <QDebug>
 
 namespace metro {
 
@@ -27,6 +31,8 @@ StationInfoWidget::StationInfoWidget(MetroMapMainWindow* ctrl, QWidget* parent) 
 
   connect(m_controller, SIGNAL(mapChanged()), SLOT(slotMapChanged()));
   connect(m_ui->lockButton, SIGNAL(clicked()), SLOT(slotChangeMode()));
+  connect(m_ui->addNextButton, SIGNAL(clicked()), SLOT(slotAddNextStation()));
+  connect(m_ui->addCrossButton, SIGNAL(clicked()), SLOT(slotAddCrossStation()));
 }
 
 StationInfoWidget::~StationInfoWidget()
@@ -53,6 +59,7 @@ void StationInfoWidget::slotStationSelected(quint32 id)
       qint32 cost = currentStation.minimumCostTo(id, 0, &ok);
       if (ok) {
         StationWithCost* sc = new StationWithCost(&m_stations, this);
+        connect(sc, SIGNAL(removeClicked()), SLOT(slotRemoveNextStation()));
         sc->setReadOnly(true);
         sc->setStation(id);
         sc->setCost(cost);
@@ -68,6 +75,7 @@ void StationInfoWidget::slotStationSelected(quint32 id)
       qint32 cost = currentStation.minimumCostTo(id, 0, &ok);
       if (ok) {
         StationWithCost* sc = new StationWithCost(&m_stations, this);
+        connect(sc, SIGNAL(removeClicked()), SLOT(slotRemoveCrossStation()));
         sc->setReadOnly(true);
         sc->setStation(id);
         sc->setCost(cost);
@@ -160,6 +168,14 @@ void StationInfoWidget::setEditMode()
 
 void StationInfoWidget::setShowMode()
 {
+  try {
+    saveStation();
+  }
+  catch (Exception& e) {
+    QMessageBox::warning(this, QObject::tr("Station not saved"), QString(e.what()));
+    return;
+  }
+
   m_ui->lockButton->setText(QObject::tr("Edit"));
   m_ui->nameLineEdit->setReadOnly(true);
   m_ui->lineStackedWidget->setCurrentWidget(m_ui->showPage);
@@ -179,6 +195,70 @@ void StationInfoWidget::setShowMode()
 
   }
   emit showModeActivated();
+}
+
+void StationInfoWidget::saveStation()
+{
+  if (m_currentStation > 0) {
+    bool ok = false;
+    Station st;
+    st.setId(m_currentStation);
+    quint32 line = m_ui->lineComboBox->currentText().toUInt(&ok);
+    if (!ok) {
+      throw Exception(QObject::tr("Station line not recognized"));
+    }
+    st.setLine(line);
+    if (m_ui->nameLineEdit->text().isEmpty()) {
+      throw Exception(QObject::tr("Station name not be empty"));
+    }
+    st.setName(m_ui->nameLineEdit->text());
+
+    foreach (StationWithCost* each, m_ui->nextGroupBox->findChildren<StationWithCost*>()) {
+      if (each != 0 && each->station() > 0 && each->cost() > 0) {
+        st.addNextRailTrack(each->station(), each->cost());
+      }
+    }
+    foreach (StationWithCost* each, m_ui->crossoverGroupBox->findChildren<StationWithCost*>()) {
+      if (each != 0 && each->station() > 0 && each->cost() > 0) {
+        st.addCrossOver(each->station(), each->cost());
+      }
+    }
+
+    if (st.railTracks().isEmpty() && st.crossOvers().isEmpty()) {
+      throw Exception(QObject::tr("Station must be have railtracks or crossovers"));
+    }
+
+    if (st.id() > 0) {
+      m_controller->removeStation(st.id());
+    }
+    m_controller->insertStation(st);
+  }
+}
+
+void StationInfoWidget::slotAddNextStation()
+{
+  qDebug() << QString("TODO add next to #%1").arg(m_currentStation);
+}
+
+void StationInfoWidget::slotAddCrossStation()
+{
+  qDebug() << QString("TODO add cross to #%1").arg(m_currentStation);
+}
+
+void StationInfoWidget::slotRemoveNextStation()
+{
+  StationWithCost* sc = qobject_cast<StationWithCost*>(sender());
+  if (sc != 0 && sc->station() != 0) {
+    qDebug() << QString("TODO remove next #%1 from #%2").arg(sc->station()).arg(m_currentStation);
+  }
+}
+
+void StationInfoWidget::slotRemoveCrossStation()
+{
+  StationWithCost* sc = qobject_cast<StationWithCost*>(sender());
+  if (sc != 0 && sc->station() != 0) {
+    qDebug() << QString("TODO remove cross #%1 from #%2").arg(sc->station()).arg(m_currentStation);
+  }
 }
 
 } // metro

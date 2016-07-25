@@ -22,6 +22,16 @@ StationWithCost::~StationWithCost()
   m_ui = 0;
 }
 
+quint32 StationWithCost::station() const
+{
+  return m_ui->stationWidget->selectedStation();
+}
+
+qint32 StationWithCost::cost() const
+{
+  return m_ui->costSpinBox->value();
+}
+
 void StationWithCost::setStation(quint32 id)
 {
   m_ui->stationWidget->slotSelectStation(id);

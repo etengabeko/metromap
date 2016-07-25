@@ -16,6 +16,7 @@ namespace metro {
 class Map;
 class MapView;
 class FindRoutesWidget;
+class Station;
 class StationInfoWidget;
 
 class MetroMapMainWindow : public QMainWindow
@@ -31,6 +32,9 @@ public:
   bool isMapChanged() const;
 
   const Map& map()const;
+
+  void removeStation(quint32 id);
+  void insertStation(const Station& station);
 
 signals:
   void mapChanged();

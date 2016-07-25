@@ -19,6 +19,9 @@ public:
   explicit StationWithCost(QMultiMap<quint32, QPair<quint32, QString> >* stations, QWidget* parent = 0);
   ~StationWithCost();
 
+  quint32 station() const;
+  qint32 cost() const;
+
   void setStation(quint32 id);
   void setCost(qint32 cost);
 
