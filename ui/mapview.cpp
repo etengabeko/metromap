@@ -27,14 +27,17 @@ namespace {
 
 QString settingsFileName() { return QString("%1/../etc/metromap.conf").arg(qApp->applicationDirPath()); }
 
-int getLineWidth() { return 3; }
-
 QColor getLineColor(quint32 line)
 {
   QSettings settings(settingsFileName(), QSettings::IniFormat);
   QString colorName = settings.value(QString("line_colors/%1").arg(line), QString("gray")).toString();
   return QColor(colorName);
 }
+
+int getLineWidth() { return 3; }
+
+qreal minZValue() { return -99.0; }
+qreal maxZValue() { return 99.0; }
 
 }
 
@@ -89,12 +92,9 @@ void MapView::slotSelectStations(const QList<quint32>& stations)
   QListIterator<quint32> it(stations);
   while (it.hasNext()) {
     quint32 id = it.next();
-    foreach (QGraphicsItem* each, m_ui->view->scene()->items()) {
-      StationItem* item = dynamic_cast<StationItem*>(each);
-      if (item != 0 && item->id() == id) {
-        item->selectStation(true);
-        break;
-      }
+    StationItem* item = itemById(id);
+    if (item != 0) {
+      item->selectStation(true);
     }
   }
   if (m_ui->routeGroupBox->isVisible()) {
@@ -110,6 +110,7 @@ void MapView::slotShowRouteInfo(const QList<quint32>& stations)
     m_ui->routeGroupBox->show();
   }
 
+  QStringList steps;
   qint32 totalCost = 0;
   int railtracks = 0;
   int crossovers = 0;
@@ -123,6 +124,10 @@ void MapView::slotShowRouteInfo(const QList<quint32>& stations)
       qint32 cost = from.minimumCostTo(to.id(), 0, &ok);
       if (ok == true) {
         totalCost += cost;
+        steps.append(from.name());
+        if (it+2 == end) {
+          steps.append(to.name());
+        }
       }
       if (from.railTracks().contains(to.id())) {
         ++railtracks;
@@ -132,6 +137,7 @@ void MapView::slotShowRouteInfo(const QList<quint32>& stations)
       }
     }
   }
+  m_ui->stepsLineEdit->setText(steps.join(" => "));
   m_ui->costLineEdit->setText(QString::number(totalCost));
   m_ui->railtracksLineEdit->setText(QString::number(railtracks));
   m_ui->crossoversLineEdit->setText(QString::number(crossovers));
@@ -139,12 +145,9 @@ void MapView::slotShowRouteInfo(const QList<quint32>& stations)
 
 void MapView::slotDeselectStation(quint32 id)
 {
-  foreach (QGraphicsItem* each, m_ui->view->scene()->items()) {
-    StationItem* item = dynamic_cast<StationItem*>(each);
-    if (item != 0 && item->id() == id) {
-      item->selectStation(false);
-      break;
-    }
+  StationItem* item = itemById(id);
+  if (item != 0) {
+    item->selectStation(false);
   }
 }
 
@@ -174,6 +177,13 @@ void MapView::slotMapChanged()
 {
   m_ui->view->scene()->clear();
 
+  renderStations();
+  renderRailTracks();
+  renderCrossOvers();
+}
+
+void MapView::renderStations()
+{
   QMap<quint32, int> stationsOnLines;
   foreach (quint32 each, m_controller->map().linesId()) {
     stationsOnLines.insert(each, 0);
@@ -189,15 +199,65 @@ void MapView::slotMapChanged()
   while (it.hasNext()) {
     const Station& each = m_controller->map().stationById(it.next());
     QPointF eachPos(pos.x() + each.line()*hstep, pos.y() + stationsOnLines[each.line()]*vstep);
-    StationItem* item = new StationItem(each.id(), eachPos);
-    QColor clr = ::getLineColor(each.line());
-    QPen p;
-    p.setColor(clr);
-    p.setWidth(::getLineWidth());
-    item->setPen(p);
+    StationItem* item = new StationItem(each.id(), eachPos, ::getLineColor(each.line()));
     item->setStationName(each.name());
+    item->setZValue(::maxZValue());
     m_ui->view->scene()->addItem(item);
     stationsOnLines[each.line()] += 1;
+  }
+}
+
+StationItem* MapView::itemById(quint32 id) const
+{
+  foreach (QGraphicsItem* each, m_ui->view->scene()->items()) {
+    StationItem* item = dynamic_cast<StationItem*>(each);
+    if (item != 0 && item->id() == id) {
+      return item;
+    }
+  }
+  return 0;
+}
+
+void MapView::renderRailTracks()
+{
+  foreach (QGraphicsItem* each, m_ui->view->scene()->items()) {
+    StationItem* item = dynamic_cast<StationItem*>(each);
+    if (item != 0 && m_controller->map().containsStation(item->id())) {
+      const Station& st = m_controller->map().stationById(item->id());
+      foreach (quint32 id, st.railTracks()) {
+        StationItem* to = itemById(id);
+        if (to != 0) {
+          QGraphicsLineItem* line = new QGraphicsLineItem(QLineF(item->coordCenter(), to->coordCenter()));
+          QPen p;
+          p.setWidth(::getLineWidth());
+          p.setColor(::getLineColor(st.line()));
+          line->setPen(p);
+          line->setZValue(::minZValue());
+          m_ui->view->scene()->addItem(line);
+        }
+      }
+    }
+  }
+}
+
+void MapView::renderCrossOvers()
+{
+  foreach (QGraphicsItem* each, m_ui->view->scene()->items()) {
+    StationItem* item = dynamic_cast<StationItem*>(each);
+    if (item != 0 && m_controller->map().containsStation(item->id())) {
+      const Station& st = m_controller->map().stationById(item->id());
+      foreach (quint32 id, st.crossOvers()) {
+        StationItem* to = itemById(id);
+        if (to != 0) {
+          QGraphicsLineItem* line = new QGraphicsLineItem(QLineF(item->coordCenter(), to->coordCenter()));
+          QPen p;
+          p.setStyle(Qt::DotLine);
+          line->setPen(p);
+          line->setZValue(::minZValue());
+          m_ui->view->scene()->addItem(line);
+        }
+      }
+    }
   }
 }
 

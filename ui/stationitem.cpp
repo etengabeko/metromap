@@ -9,18 +9,34 @@
 
 namespace {
 
-QBrush selectedBrush() { return QBrush(QColor(Qt::yellow), Qt::SolidPattern); }
-QBrush unselectedBrush() { return QBrush(QColor(Qt::white), Qt::SolidPattern); }
+QBrush selectedBrush()
+{
+  return QBrush(QColor(Qt::yellow), Qt::SolidPattern);
+}
+
+QBrush unselectedBrush(const QColor& color)
+{
+  return QBrush(color, Qt::SolidPattern);
+}
+
+int getLineWidth() { return 3; }
 
 }
 
 namespace metro {
 
-StationItem::StationItem(quint32 id, const QPointF& topleft, QGraphicsItem* parent) :
+StationItem::StationItem(quint32 id, const QPointF& topleft, const QColor& color, QGraphicsItem* parent) :
   QGraphicsEllipseItem(stationRect(topleft), parent),
   m_id(id),
+  m_color(color),
   m_name(new QGraphicsTextItem(this))
 {
+  QPen p;
+  p.setColor(m_color);
+  p.setWidth(::getLineWidth());
+  setPen(p);
+  setBrush(::unselectedBrush(m_color));
+
   QPointF namePos(topleft.x() + stationEllipseRadius()*2, topleft.y());
   m_name->setPos(namePos);
 }
@@ -55,7 +71,7 @@ void StationItem::selectStation(bool selected)
     setBrush(::selectedBrush());
   }
   else {
-    setBrush(::unselectedBrush());
+    setBrush(::unselectedBrush(m_color));
   }
 }
 
@@ -64,28 +80,37 @@ bool StationItem::isSelectedStation() const
   return brush() == ::selectedBrush();
 }
 
+QPointF StationItem::coordCenter() const
+{
+  return boundingRect().center();
+}
+
 QPointF StationItem::coordTop() const
 {
-  return (QPointF(scenePos().x() + stationEllipseRadius(),
-                  scenePos().y()));
+  QPointF topleft = boundingRect().topLeft();
+  return (QPointF(topleft.x() + stationEllipseRadius(),
+                  topleft.y()));
 }
 
 QPointF StationItem::coordBottom() const
 {
-  return (QPointF(scenePos().x() + stationEllipseRadius(),
-                  scenePos().y() + 2*stationEllipseRadius()));
+  QPointF topleft = boundingRect().topLeft();
+  return (QPointF(topleft.x() + stationEllipseRadius(),
+                  topleft.y() + 2*stationEllipseRadius()));
 }
 
 QPointF StationItem::coordLeft() const
 {
-  return (QPointF(scenePos().x(),
-                  scenePos().y() + stationEllipseRadius()));
+  QPointF topleft = boundingRect().topLeft();
+  return (QPointF(topleft.x(),
+                  topleft.y() + stationEllipseRadius()));
 }
 
 QPointF StationItem::coordRight() const
 {
-  return (QPointF(scenePos().x() + 2*stationEllipseRadius(),
-                  scenePos().y() + stationEllipseRadius()));
+  QPointF topleft = boundingRect().topLeft();
+  return (QPointF(topleft.x() + 2*stationEllipseRadius(),
+                  topleft.y() + stationEllipseRadius()));
 }
 
 }

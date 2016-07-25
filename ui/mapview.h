@@ -47,6 +47,10 @@ private slots:
 
 private:
   void initScene();
+  void renderStations();
+  void renderRailTracks();
+  void renderCrossOvers();
+  StationItem* itemById(quint32 id) const;
   void clearSelection();
   QList<quint32> selectedStations() const;
   void selectStation(StationItem* item, const QPoint& pos);
