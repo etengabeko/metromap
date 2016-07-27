@@ -19,8 +19,9 @@ public:
   void setName(const QString& name);
 
   void addCrossOver(quint32 stationId, qint32 cost);
-  void addNextRailTrack(quint32 stationId, qint32 cost);
-  void addPreviousRailTrack(quint32 stationId, qint32 cost);
+  void addRailTrack(quint32 stationId, qint32 cost);
+  void removeCrossOver(quint32 stationId);
+  void removeRailTrack(quint32 stationId);
 
   quint32 id() const;
   quint32 line() const;
@@ -32,6 +33,8 @@ public:
   QList<quint32> railTracks() const;
 
   qint32 minimumCostTo(quint32 id, qint32 crossoverPenalty, bool* ok = 0) const;
+  qint32 railTrackCostTo(quint32 id, bool* ok = 0) const;
+  qint32 crossOverCostTo(quint32 id, bool* ok = 0) const;
 
   QString toJsonString() const;
   static Station fromJsonString(const QString& str);
@@ -56,12 +59,13 @@ private:
   QString m_name;
 
   QMap<quint32, qint32> m_crossovers;
-  QMap<quint32, qint32> m_railtracksNext;
-  QMap<quint32, qint32> m_railtracksPrevious;
+  QMap<quint32, qint32> m_railtracks;
 
 };
 
 } // metro
+
+bool operator==(const metro::Station& lhs, const metro::Station& rhs);
 
 QTextStream& operator<<(QTextStream& out, const metro::Station& station);
 QTextStream& operator>>(QTextStream& in, metro::Station& station);

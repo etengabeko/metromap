@@ -35,6 +35,7 @@ public:
 
   void removeStation(quint32 id);
   void insertStation(const Station& station);
+  void showErrorMessage(const QString& error);
 
 signals:
   void mapChanged();
@@ -47,6 +48,7 @@ private slots:
   void slotCloseMap();
   void slotMapChanged();
   void slotShowStationInfo(quint32 id);
+  void slotRemoveStation(quint32 id);
 
 private:
   void closeEvent(QCloseEvent* event);
@@ -59,7 +61,6 @@ private:
   bool trySaveMap();
   bool trySaveMap(const QString& fileName);
 
-  void showErrorMessage(const QString& error);
 
   void enableMenuActions(bool isMapOpen);
 

@@ -54,12 +54,17 @@ MetroMapMainWindow::MetroMapMainWindow(QWidget* parent) :
 
   connect(m_routes, SIGNAL(routeCreated(const QList<quint32>&)), m_mapview, SLOT(slotShowRouteInfo(const QList<quint32>&)));
   connect(m_routes, SIGNAL(stationSelected(quint32)), m_mapview, SLOT(slotSelectStations(quint32)));
+
   connect(m_mapview, SIGNAL(fromSelected(quint32)), m_routes, SLOT(slotSelectFrom(quint32)));
   connect(m_mapview, SIGNAL(toSelected(quint32)), m_routes, SLOT(slotSelectTo(quint32)));
-  connect(m_mapview, SIGNAL(stationSelected(quint32)), m_station, SLOT(slotStationSelected(quint32)));
+  connect(m_mapview, SIGNAL(stationSelected(quint32)), m_station, SLOT(slotSelectStation(quint32)));
   connect(m_mapview, SIGNAL(stationDeselected(quint32)), m_station, SLOT(slotClear()));
   connect(m_mapview, SIGNAL(stationDeselected(quint32)), m_routes, SLOT(slotDeselect(quint32)));
   connect(m_mapview, SIGNAL(stationEdited(quint32)), SLOT(slotShowStationInfo(quint32)));
+  connect(m_mapview, SIGNAL(stationAdded(quint32)), SLOT(slotShowStationInfo(quint32)));
+  connect(m_mapview, SIGNAL(stationAdded(quint32)), m_station, SLOT(slotAddStation(quint32)));
+  connect(m_mapview, SIGNAL(stationRemoved(quint32)), SLOT(slotRemoveStation(quint32)));
+
   connect(m_station, SIGNAL(editModeActivated()), m_mapview, SLOT(slotToEditMode()));
   connect(m_station, SIGNAL(showModeActivated()), m_mapview, SLOT(slotToShowMode()));
 }
@@ -327,18 +332,29 @@ void MetroMapMainWindow::slotShowStationInfo(quint32 id)
   }
 }
 
+void MetroMapMainWindow::slotRemoveStation(quint32 id)
+{
+  if (!m_map.isNull() && m_map->containsStation(id)) {
+    m_map->removeStation(m_map->stationById(id));
+  }
+  emit mapChanged();
+}
+
 void MetroMapMainWindow::closeEvent(QCloseEvent* event)
 {
-  QMessageBox::StandardButton answer = QMessageBox::information(this, QObject::tr("Confirm quit"),
-                                                                QObject::tr("You really want to quit?"),
-                                                                QMessageBox::Yes | QMessageBox::No,
-                                                                QMessageBox::Yes);
-  if (answer == QMessageBox::No) {
-    event->ignore();
-    return;
+  if (m_needSaveMap) {
+    QMessageBox::StandardButton answer = QMessageBox::information(this, QObject::tr("Map is changed"),
+                                                                  QObject::tr("Save changes before quit?"),
+                                                                  QMessageBox::Yes | QMessageBox::No,
+                                                                  QMessageBox::Yes);
+    if (answer == QMessageBox::Yes) {
+      slotCloseMap();
+    }
+    else {
+      m_needSaveMap = false;
+    }
   }
 
-  slotCloseMap();
   if (m_needSaveMap) {
     event->ignore();
     return;
@@ -349,11 +365,7 @@ void MetroMapMainWindow::closeEvent(QCloseEvent* event)
 
 void MetroMapMainWindow::removeStation(quint32 id)
 {
-  if (!m_map.isNull()) {
-    m_map->removeStation(id);
-    m_needSaveMap = true;
-    emit mapChanged();
-  }
+  slotRemoveStation(id);
 }
 
 void MetroMapMainWindow::insertStation(const Station& station)

@@ -36,6 +36,8 @@ public:
   QString debugString() const;
 
 private:
+  void updateLinks(const Station& station);
+  void removeLinks(const Station& station);
   void rebuildStationsGraph();
   QList<StationIterator> findDijkstraPath(const StationIterator& from,
                                           const StationIterator& to,

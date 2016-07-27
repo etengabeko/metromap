@@ -2,9 +2,7 @@
     "id": "31",
     "line": "3",
     "name": "Приморская",
-    "previous": {
-    },
-    "next": {
+    "railtrack": {
         "32": "4"
     },
     "crossover": {
@@ -14,10 +12,8 @@
     "id": "32",
     "line": "3",
     "name": "Василеостровская",
-    "previous": {
+    "railtrack": {
         "31": "4"
-    },
-    "next": {
         "33": "5"
     },
     "crossover": {
@@ -27,10 +23,8 @@
     "id": "33",
     "line": "3",
     "name": "Гостиный двор",
-    "previous": {
+    "railtrack": {
         "32": "5"
-    },
-    "next": {
         "34": "3"
     },
     "crossover": {
@@ -41,10 +35,8 @@
     "id": "34",
     "line": "3",
     "name": "Маяковская",
-    "previous": {
+    "railtrack": {
         "33": "3"
-    },
-    "next": {
         "35": "3"
     },
     "crossover": {
@@ -55,10 +47,8 @@
     "id": "35",
     "line": "3",
     "name": "Пл. Ал.Невского-1",
-    "previous": {
+    "railtrack": {
         "34": "3"
-    },
-    "next": {
         "36": "5"
     },
     "crossover": {
@@ -69,10 +59,8 @@
     "id": "36",
     "line": "3",
     "name": "Елизаровская",
-    "previous": {
+    "railtrack": {
         "35": "5"
-    },
-    "next": {
         "37": "4"
     },
     "crossover": {
@@ -82,10 +70,8 @@
     "id": "37",
     "line": "3",
     "name": "Ломоносовская",
-    "previous": {
+    "railtrack": {
         "36": "4"
-    },
-    "next": {
     },
     "crossover": {
     }
@@ -94,9 +80,7 @@
     "id": "21",
     "line": "2",
     "name": "Петроградская",
-    "previous": {
-    },
-    "next": {
+    "railtrack": {
         "22": "3"
     },
     "crossover": {
@@ -106,10 +90,8 @@
     "id": "22",
     "line": "2",
     "name": "Горьковская",
-    "previous": {
+    "railtrack": {
         "21": "3"
-    },
-    "next": {
         "23": "4"
     },
     "crossover": {
@@ -119,10 +101,8 @@
     "id": "23",
     "line": "2",
     "name": "Невский пр.",
-    "previous": {
+    "railtrack": {
         "22": "4"
-    },
-    "next": {
         "24": "2"
     },
     "crossover": {
@@ -133,10 +113,8 @@
     "id": "24",
     "line": "2",
     "name": "Сенная пл.",
-    "previous": {
+    "railtrack": {
         "23": "2"
-    },
-    "next": {
         "25": "2"
     },
     "crossover": {
@@ -148,10 +126,8 @@
     "id": "25",
     "line": "2",
     "name": "Технологический ин-т-2",
-    "previous": {
+    "railtrack": {
         "24": "2"
-    },
-    "next": {
         "26": "2"
     },
     "crossover": {
@@ -162,10 +138,8 @@
     "id": "26",
     "line": "2",
     "name": "Фрунзенская",
-    "previous": {
+    "railtrack": {
         "25": "2"
-    },
-    "next": {
         "27": "2"
     },
     "crossover": {
@@ -175,10 +149,8 @@
     "id": "27",
     "line": "2",
     "name": "Московские ворота",
-    "previous": {
+    "railtrack": {
         "26": "2"
-    },
-    "next": {
     },
     "crossover": {
     }
@@ -187,9 +159,7 @@
     "id": "41",
     "line": "4",
     "name": "Спасская",
-	"previous": {
-	},
-	"next": {
+    "railtrack": {
         "42": "2"
 	},
 	"crossover": {
@@ -201,10 +171,8 @@
     "id": "42",
     "line": "4",
     "name": "Достоевская",
-    "previous": {
+    "railtrack": {
         "41": "2"
-    },
-    "next": {
         "43": "2"
     },
     "crossover": {
@@ -215,10 +183,8 @@
     "id": "43",
     "line": "4",
     "name": "Лиговский пр.",
-    "previous": {
+    "railtrack": {
         "42": "2"
-    },
-    "next": {
         "44": "2"
     },
     "crossover": {
@@ -228,10 +194,8 @@
     "id": "44",
     "line": "4",
     "name": "Пл. Ал.Невского-2",
-    "previous": {
+    "railtrack": {
         "43": "2"
-    },
-    "next": {
         "45": "3"
     },
     "crossover": {
@@ -242,10 +206,8 @@
     "id": "45",
     "line": "4",
     "name": "Новочеркасская",
-    "previous": {
+    "railtrack": {
         "44": "3"
-    },
-    "next": {
         "46": "2"
     },
     "crossover": {
@@ -255,10 +217,8 @@
     "id": "46",
     "line": "4",
     "name": "Ладожская",
-    "previous": {
+    "railtrack": {
         "45": "2"
-    },
-    "next": {
     },
     "crossover": {
     }
@@ -267,9 +227,7 @@
     "id": "51",
     "line": "5",
     "name": "Спортивная",
-    "previous": {
-    },
-    "next": {
+    "railtrack": {
         "52": "3"
     },
     "crossover": {
@@ -279,10 +237,8 @@
     "id": "52",
     "line": "5",
     "name": "Адмиралтейская",
-    "previous": {
+    "railtrack": {
         "51": "3"
-    },
-    "next": {
         "53": "2"
     },
     "crossover": {
@@ -292,10 +248,8 @@
     "id": "53",
     "line": "5",
     "name": "Садовая",
-    "previous": {
+    "railtrack": {
         "52": "2"
-    },
-    "next": {
         "54": "2"
     },
     "crossover": {
@@ -307,10 +261,8 @@
     "id": "54",
     "line": "5",
     "name": "Звенигородская",
-    "previous": {
+    "railtrack": {
         "53": "2"
-    },
-    "next": {
         "55": "2"
     },
     "crossover": {
@@ -321,10 +273,8 @@
     "id": "55",
     "line": "5",
     "name": "Обводный канал",
-    "previous": {
+    "railtrack": {
         "54": "2"
-    },
-    "next": {
         "56": "3"
     },
     "crossover": {
@@ -334,10 +284,8 @@
     "id": "56",
     "line": "5",
     "name": "Волковская",
-    "previous": {
+    "railtrack": {
         "55": "3"
-    },
-    "next": {
     },
     "crossover": {
     }
@@ -346,9 +294,7 @@
     "id": "11",
     "line": "1",
     "name": "Пл. Ленина",
-    "previous": {
-    },
-    "next": {
+    "railtrack": {
         "12": "4"
     },
     "crossover": {
@@ -358,10 +304,8 @@
     "id": "12",
     "line": "1",
     "name": "Чернышевская",
-    "previous": {
+    "railtrack": {
         "11": "4"
-    },
-    "next": {
         "13": "3"
     },
     "crossover": {
@@ -371,10 +315,8 @@
     "id": "13",
     "line": "1",
     "name": "Пл. Восстания",
-    "previous": {
+    "railtrack": {
         "12": "3"
-    },
-    "next": {
         "14": "2"
     },
     "crossover": {
@@ -385,10 +327,8 @@
     "id": "14",
     "line": "1",
     "name": "Владимирская",
-    "previous": {
+    "railtrack": {
         "13": "2"
-    },
-    "next": {
         "15": "2"
     },
     "crossover": {
@@ -399,10 +339,8 @@
     "id": "15",
     "line": "1",
     "name": "Пушкинская",
-    "previous": {
+    "railtrack": {
         "14": "2"
-    },
-    "next": {
         "16": "2"
     },
     "crossover": {
@@ -413,10 +351,8 @@
     "id": "16",
     "line": "1",
     "name": "Технологический ин-т-1",
-    "previous": {
+    "railtrack": {
         "15": "2"
-    },
-    "next": {
         "17": "4"
     },
     "crossover": {
@@ -427,10 +363,8 @@
     "id": "17",
     "line": "1",
     "name": "Балтийская",
-    "previous": {
+    "railtrack": {
         "16": "4"
-    },
-    "next": {
         "18": "4"
     },
     "crossover": {
@@ -440,10 +374,8 @@
     "id": "18",
     "line": "1",
     "name": "Нарвская",
-    "previous": {
+    "railtrack": {
         "17": "4"
-    },
-    "next": {
     },
     "crossover": {
     }

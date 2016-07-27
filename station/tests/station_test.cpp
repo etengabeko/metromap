@@ -11,7 +11,7 @@
 
 namespace {
 
-QString testInputFileName()  { return qApp->applicationDirPath() + "/../../testfiles/input.json"; }
+QString testInputFileName()  { return qApp->applicationDirPath() + "/../../testfiles/spb.json"; }
 QString testOutputFileName() { return qApp->applicationDirPath() + "/../../testfiles/output.json"; }
 
 //metro::Station sennplStation()
@@ -65,23 +65,20 @@ void StationTest::jsonSaveLoadTest()
   QByteArray inputContent = getFileContent(::testInputFileName(), &ok);
   QVERIFY(ok);
 
-  QList<metro::Station> stations;
-
-  QFile f(::testInputFileName());
-  if (f.open(QFile::ReadOnly)) {
-    QTextStream in(&f);
+  QList<metro::Station> before;
+  {
+    QTextStream in(inputContent);
     while (!in.atEnd()) {
       metro::Station st;
       in >> st;
-      stations.append(st);
+      before.append(st);
     }
   }
-  f.close();
 
-  f.setFileName(::testOutputFileName());
+  QFile f(::testOutputFileName());
   if (f.open(QFile::WriteOnly)) {
     QTextStream out(&f);
-    QListIterator<metro::Station> it(stations);
+    QListIterator<metro::Station> it(before);
     while (it.hasNext()) {
       out << it.next();
       if (it.hasNext()) {
@@ -94,7 +91,18 @@ void StationTest::jsonSaveLoadTest()
 
   QByteArray outputContent = getFileContent(::testOutputFileName(), &ok);
   QVERIFY(ok);
-  QCOMPARE(inputContent, outputContent);
+
+  QList<metro::Station> after;
+  {
+    QTextStream in(outputContent);
+    while (!in.atEnd()) {
+      metro::Station st;
+      in >> st;
+      after.append(st);
+    }
+  }
+
+  QCOMPARE(before, after);
 }
 
 void StationTest::cleanupTestCase()

@@ -33,6 +33,8 @@ signals:
   void fromSelected(quint32 id);
   void toSelected(quint32 id);
   void stationEdited(quint32 id);
+  void stationAdded(quint32 id);
+  void stationRemoved(quint32 id);
 
 public slots:
   void slotSelectStations(quint32 id);
@@ -54,6 +56,7 @@ private:
   void clearSelection();
   QList<quint32> selectedStations() const;
   void selectStation(StationItem* item, const QPoint& pos);
+  StationItem* addStation(quint32 id, const QPointF& pos, const QColor& color = QColor(Qt::gray));
 
   bool eventFilter(QObject* watched, QEvent* event);
 

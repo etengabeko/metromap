@@ -58,18 +58,60 @@ void Map::insertStation(const Station& station)
 {
   QSharedPointer<Station> newStation(new Station(station));
   m_stations.insert(newStation->id(), newStation);
+  updateLinks(station);
   rebuildStationsGraph();
 }
 
-void Map::removeStation(const Station& station)
+void Map::updateLinks(const Station& station)
 {
-  removeStation(station.id());
+  foreach (quint32 neighbour, station.railTracks()) {
+    if (m_stations.contains(neighbour)) {
+      if (!m_stations[neighbour]->railTracks().contains(station.id())) {
+        m_stations[neighbour]->addRailTrack(station.id(), station.railTrackCostTo(neighbour));
+      }
+    }
+  }
+  foreach (quint32 neighbour, station.crossOvers()) {
+    if (m_stations.contains(neighbour)) {
+      if (!m_stations[neighbour]->crossOvers().contains(station.id())) {
+        m_stations[neighbour]->addCrossOver(station.id(), station.crossOverCostTo(neighbour));
+      }
+    }
+  }
 }
 
 void Map::removeStation(quint32 id)
 {
-  m_stations.remove(id);
-  rebuildStationsGraph();
+  if (m_stations.contains(id)) {
+    removeStation(stationById(id));
+  }
+}
+
+void Map::removeStation(const Station& station)
+{
+  if (m_stations.contains(station.id())) {
+    removeLinks(station);
+    m_stations.remove(station.id());
+    rebuildStationsGraph();
+  }
+}
+
+void Map::removeLinks(const Station& station)
+{
+  foreach (quint32 neighbour, station.railTracks()) {
+    if (m_stations.contains(neighbour)) {
+      if (m_stations[neighbour]->railTracks().contains(station.id())) {
+        m_stations[neighbour]->removeRailTrack(station.id());
+      }
+    }
+  }
+  foreach (quint32 neighbour, station.crossOvers()) {
+    if (m_stations.contains(neighbour)) {
+      if (m_stations[neighbour]->crossOvers().contains(station.id())) {
+        m_stations[neighbour]->removeCrossOver(station.id());
+      }
+    }
+  }
 }
 
 void Map::loadFromFile(const QString& fileName)
@@ -192,8 +234,13 @@ QList<Map::StationIterator> Map::findDijkstraPath(const StationIterator& from, c
   QList<StationIterator> resultPath;
   StationIterator step = to;
   while (step != from) {
-    resultPath.push_front(step);
-    step = dist[step].from;
+    if (dist.contains(step)) {
+      resultPath.push_front(step);
+      step = dist[step].from;
+    }
+    else {
+      throw Exception(QObject::tr("Path not found: from %1 to %2").arg(from.value()->name()).arg(to.value()->name()));
+    }
   }
   resultPath.push_front(step);
   return resultPath;

@@ -199,10 +199,8 @@ void MapView::renderStations()
   while (it.hasNext()) {
     const Station& each = m_controller->map().stationById(it.next());
     QPointF eachPos(pos.x() + each.line()*hstep, pos.y() + stationsOnLines[each.line()]*vstep);
-    StationItem* item = new StationItem(each.id(), eachPos, ::getLineColor(each.line()));
+    StationItem* item = addStation(each.id(), eachPos, ::getLineColor(each.line()));
     item->setStationName(each.name());
-    item->setZValue(::maxZValue());
-    m_ui->view->scene()->addItem(item);
     stationsOnLines[each.line()] += 1;
   }
 }
@@ -277,7 +275,7 @@ bool MapView::eventFilter(QObject* watched, QEvent* event)
             QAction* edit = 0;
             QAction* remove = 0;
             if (item != 0) {
-              edit = new QAction(QObject::tr("Show station info"), &m);
+              edit = new QAction(QObject::tr("Edit station"), &m);
               remove = new QAction(QObject::tr("Remove station"), &m);
               m.addAction(edit);
             }
@@ -288,15 +286,23 @@ bool MapView::eventFilter(QObject* watched, QEvent* event)
 
             QAction* answer = m.exec(mapToGlobal(me->pos()));
             if (answer != 0) {
-              m_mode = EDIT;
+              slotToEditMode();
               if (answer == add) {
-                qDebug() << "TODO add station";
+                quint32 id = 0xFFFFFFFF;
+                while (m_controller->map().containsStation(id)) {
+                  --id;
+                }
+                StationItem* item = addStation(id, m_ui->view->mapToScene(me->pos()));
+                item->selectStation(true);
+                emit stationAdded(id);
               }
               else if (answer == edit) {
                 selectStation(item, me->pos());
               }
               else if (answer == remove) {
-                qDebug() << QString("TODO remove #%1").arg(item->id());
+                quint32 id = item->id();
+                delete item;
+                emit stationRemoved(id);
               }
             }
           }
@@ -312,11 +318,23 @@ bool MapView::eventFilter(QObject* watched, QEvent* event)
 void MapView::slotToShowMode()
 {
   m_mode = SHOW;
+  foreach (QGraphicsItem* item, m_ui->view->scene()->items()) {
+    StationItem* st = dynamic_cast<StationItem*>(item);
+    if (st != 0) {
+      st->setFlag(QGraphicsItem::ItemIsMovable, false);
+    }
+  }
 }
 
 void MapView::slotToEditMode()
 {
   m_mode = EDIT;
+  foreach (QGraphicsItem* item, m_ui->view->scene()->items()) {
+    StationItem* st = dynamic_cast<StationItem*>(item);
+    if (st != 0) {
+      st->setFlag(QGraphicsItem::ItemIsMovable);
+    }
+  }
 }
 
 void MapView::selectStation(StationItem* item, const QPoint& pos)
@@ -363,6 +381,14 @@ void MapView::selectStation(StationItem* item, const QPoint& pos)
     default:
       break;
   }
+}
+
+StationItem* MapView::addStation(quint32 id, const QPointF& pos, const QColor& color)
+{
+  StationItem* item = new StationItem(id, pos, color);
+  item->setZValue(::maxZValue());
+  m_ui->view->scene()->addItem(item);
+  return item;
 }
 
 } // metro

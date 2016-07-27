@@ -5,6 +5,7 @@
 #include "metromapmainwindow.h"
 #include "selectstation.h"
 
+#include <exception/exception.h>
 #include <map/map.h>
 
 #include <QToolButton>
@@ -139,20 +140,25 @@ void FindRoutesWidget::slotCalcRoute()
     mediates.push_back(to);
   }
 
-  QList<quint32> route;
-  if (mediates.size() > 1) {
-    for (QList<quint32>::const_iterator it = mediates.constBegin(), end = mediates.constEnd(); it != end-1; ++it) {
-      from = *it;
-      to = *(it+1);
-      if (isMinimizeCrossovers()) {
-        route.append(m_controller->map().findCrossOverOptimizedPath(from, to));
-      }
-      else {
-        route.append(m_controller->map().findTimeOptimizedPath(from, to));
+  try {
+    QList<quint32> route;
+    if (mediates.size() > 1) {
+      for (QList<quint32>::const_iterator it = mediates.constBegin(), end = mediates.constEnd(); it != end-1; ++it) {
+        from = *it;
+        to = *(it+1);
+        if (isMinimizeCrossovers()) {
+          route.append(m_controller->map().findCrossOverOptimizedPath(from, to));
+        }
+        else {
+          route.append(m_controller->map().findTimeOptimizedPath(from, to));
+        }
       }
     }
+    emit routeCreated(route);
   }
-  emit routeCreated(route);
+  catch (Exception& e) {
+    m_controller->showErrorMessage(e.what());
+  }
 }
 
 void FindRoutesWidget::slotMapChanged()

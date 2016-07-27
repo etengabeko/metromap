@@ -5,8 +5,6 @@
 #include <QStringList>
 #include <QTextStream>
 
-#include<cmath>
-
 namespace {
 
 enum json_keys_t
@@ -15,8 +13,7 @@ enum json_keys_t
   ID,
   LINE,
   NAME,
-  PREVIOUS,
-  NEXT,
+  RAILTRACK,
   CROSSOVER
 };
 
@@ -28,8 +25,7 @@ const QMap<json_keys_t, QString>& jsonKeys()
     jsonKeys.insert(ID,        "id"       );
     jsonKeys.insert(LINE,      "line"     );
     jsonKeys.insert(NAME,      "name"     );
-    jsonKeys.insert(PREVIOUS,  "previous" );
-    jsonKeys.insert(NEXT,      "next"     );
+    jsonKeys.insert(RAILTRACK, "railtrack");
     jsonKeys.insert(CROSSOVER, "crossover");
   }
   return jsonKeys;
@@ -110,14 +106,19 @@ void Station::addCrossOver(quint32 stationId, qint32 cost)
   m_crossovers[stationId] = cost;
 }
 
-void Station::addNextRailTrack(quint32 stationId, qint32 cost)
+void Station::addRailTrack(quint32 stationId, qint32 cost)
 {
-  m_railtracksNext[stationId] = cost;
+  m_railtracks[stationId] = cost;
 }
 
-void Station::addPreviousRailTrack(quint32 stationId, qint32 cost)
+void Station::removeCrossOver(quint32 stationId)
 {
-  m_railtracksPrevious[stationId] = cost;
+  m_crossovers.remove(stationId);
+}
+
+void Station::removeRailTrack(quint32 stationId)
+{
+  m_railtracks.remove(stationId);
 }
 
 quint32 Station::id() const
@@ -150,8 +151,7 @@ QList<quint32> Station::crossOvers() const
 
 QList<quint32> Station::railTracks() const
 {
-  return   m_railtracksPrevious.keys()
-        << m_railtracksNext.keys();
+  return m_railtracks.keys();
 }
 
 qint32 Station::minimumCostTo(quint32 id, qint32 crossoverPenalty, bool* ok) const
@@ -167,24 +167,73 @@ qint32 Station::minimumCostTo(quint32 id, qint32 crossoverPenalty, bool* ok) con
     return 0;
   }
 
-  float minCost = NAN;
-  if (m_crossovers.contains(id)) {
-    minCost = m_crossovers.value(id) + crossoverPenalty;
-  }
-  if (m_railtracksNext.contains(id)) {
-    minCost = (isnan(minCost) == 0) ? qMin(minCost, static_cast<float>(m_railtracksNext.value(id)))
-                                    : m_railtracksNext.value(id);
-  }
-  if (m_railtracksPrevious.contains(id)) {
-    minCost = (isnan(minCost) == 0) ? qMin(minCost, static_cast<float>(m_railtracksPrevious.value(id)))
-                                    : m_railtracksPrevious.value(id);
-  }
+  bool hasCrossover = false,
+       hasRailtrack = false;
 
-  if (isnan(minCost) == 0) {
+  qint32 crossoverCost = crossOverCostTo(id, &hasCrossover);
+  qint32 railtrackCost = railTrackCostTo(id, &hasRailtrack);
+
+  if (hasCrossover && hasRailtrack) {
     if (ok != 0) {
       *ok = true;
     }
-    return static_cast<qint32>(minCost);
+    return qMin(crossoverCost + crossoverPenalty, railtrackCost);
+  }
+  else if (hasCrossover) {
+    if (ok != 0) {
+      *ok = true;
+    }
+    return crossoverCost + crossoverPenalty;
+  }
+  else if (hasRailtrack) {
+    if (ok != 0) {
+      *ok = true;
+    }
+    return railtrackCost;
+  }
+  return 0;
+}
+
+qint32 Station::railTrackCostTo(quint32 id, bool* ok) const
+{
+  if (ok != 0) {
+    *ok = false;
+  }
+
+  if (id == m_id) {
+    if (ok != 0) {
+      *ok = true;
+    }
+    return 0;
+  }
+
+  if (m_railtracks.contains(id)) {
+    if (ok != 0) {
+      *ok = true;
+    }
+    return m_railtracks.value(id);
+  }
+  return 0;
+}
+
+qint32 Station::crossOverCostTo(quint32 id, bool* ok) const
+{
+  if (ok != 0) {
+    *ok = false;
+  }
+
+  if (id == m_id) {
+    if (ok != 0) {
+      *ok = true;
+    }
+    return 0;
+  }
+
+  if (m_crossovers.contains(id)) {
+    if (ok != 0) {
+      *ok = true;
+    }
+    return m_crossovers.value(id);
   }
   return 0;
 }
@@ -204,23 +253,16 @@ QString Station::toJsonString() const
   QString crossovers = makeJsonObject(::jsonKeys()[CROSSOVER], tmplist);
 
   tmplist.clear();
-  for (iter_t it = m_railtracksNext.constBegin(), end = m_railtracksNext.constEnd(); it != end; ++it) {
+  for (iter_t it = m_railtracks.constBegin(), end = m_railtracks.constEnd(); it != end; ++it) {
     tmplist << makeJsonPair(it.key(), it.value());
   }
-  QString next = makeJsonObject(::jsonKeys()[NEXT], tmplist);
-
-  tmplist.clear();
-  for (iter_t it = m_railtracksPrevious.constBegin(), end = m_railtracksPrevious.constEnd(); it != end; ++it) {
-    tmplist << makeJsonPair(it.key(), it.value());
-  }
-  QString previous = makeJsonObject(::jsonKeys()[PREVIOUS], tmplist);
+  QString railtracks = makeJsonObject(::jsonKeys()[RAILTRACK], tmplist);
 
   tmplist.clear();
   tmplist << id
           << line
           << name
-          << previous
-          << next
+          << railtracks
           << crossovers;
 
   return makeJsonObject(::jsonKeys()[STATION], tmplist);
@@ -268,13 +310,8 @@ Station Station::fromJsonString(const QString& str)
               result.setName(jsonValue(each));
               founded = true;
             } break;
-          case PREVIOUS: {
-              result.addFromJsonContent(result.m_railtracksPrevious,
-                                        ::jsonObjectContent(stationIt, stationEnd));
-              founded = true;
-            } break;
-          case NEXT: {
-              result.addFromJsonContent(result.m_railtracksNext,
+          case RAILTRACK: {
+              result.addFromJsonContent(result.m_railtracks,
                                         ::jsonObjectContent(stationIt, stationEnd));
               founded = true;
             } break;
@@ -328,6 +365,15 @@ QString Station::jsonValue(const QString& jsonPair)
 }
 
 } // metro
+
+bool operator==(const metro::Station& lhs, const metro::Station& rhs)
+{
+  return   lhs.id() == rhs.id()
+        && lhs.line() == rhs.line()
+        && lhs.name() == rhs.name()
+        && lhs.railTracks() == rhs.railTracks()
+        && lhs.crossOvers() == rhs.crossOvers();
+}
 
 QTextStream& operator<<(QTextStream& out, const metro::Station& station)
 {
