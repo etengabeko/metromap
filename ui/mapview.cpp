@@ -4,6 +4,7 @@
 #include "metromapmainwindow.h"
 #include "stationitem.h"
 
+#include <exception/exception.h>
 #include <map/map.h>
 #include <station/station.h>
 
@@ -20,8 +21,6 @@
 #include <QPair>
 #include <QPointF>
 #include <QSettings>
-
-#include <QDebug>
 
 namespace {
 
@@ -270,6 +269,7 @@ bool MapView::eventFilter(QObject* watched, QEvent* event)
             selectStation(item, me->pos());
           }
           else if (me->button() == Qt::RightButton) {
+            const quint32 maxId = static_cast<quint32>(0xFFFFFFFF);
             QMenu m;
             QAction* add = new QAction(QObject::tr("Add station"), &m);
             QAction* edit = 0;
@@ -284,13 +284,19 @@ bool MapView::eventFilter(QObject* watched, QEvent* event)
               m.addAction(remove);
             }
 
+            if (itemById(maxId) != 0) {
+              add->setEnabled(false);
+            }
+
             QAction* answer = m.exec(mapToGlobal(me->pos()));
             if (answer != 0) {
               slotToEditMode();
               if (answer == add) {
-                quint32 id = 0xFFFFFFFF;
+                quint32 id = maxId;
                 while (m_controller->map().containsStation(id)) {
-                  --id;
+                  if (--id == 0) {
+                    throw Exception(QObject::tr("Overflow limit of stations count"));
+                  }
                 }
                 StationItem* item = addStation(id, m_ui->view->mapToScene(me->pos()));
                 item->selectStation(true);

@@ -29,6 +29,7 @@ signals:
 public slots:
   void slotSelectStation(quint32 id);
   void slotAddStation(quint32 id);
+  void slotRemoveStation(quint32 id);
   void slotClear();
 
 private slots:
@@ -36,11 +37,11 @@ private slots:
   void slotChangeMode();
   void slotAddNextStation();
   void slotAddCrossStation();
-  void slotRemoveStation();
+  void slotRemoveNeighbour();
 
 private:
-  void setEditMode();
-  void setShowMode();
+  bool setEditMode();
+  bool setShowMode();
   void saveStation();
 
 private:

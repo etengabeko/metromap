@@ -63,6 +63,7 @@ MetroMapMainWindow::MetroMapMainWindow(QWidget* parent) :
   connect(m_mapview, SIGNAL(stationEdited(quint32)), SLOT(slotShowStationInfo(quint32)));
   connect(m_mapview, SIGNAL(stationAdded(quint32)), SLOT(slotShowStationInfo(quint32)));
   connect(m_mapview, SIGNAL(stationAdded(quint32)), m_station, SLOT(slotAddStation(quint32)));
+  connect(m_mapview, SIGNAL(stationRemoved(quint32)), m_station, SLOT(slotRemoveStation(quint32)));
   connect(m_mapview, SIGNAL(stationRemoved(quint32)), SLOT(slotRemoveStation(quint32)));
 
   connect(m_station, SIGNAL(editModeActivated()), m_mapview, SLOT(slotToEditMode()));
@@ -302,7 +303,8 @@ void MetroMapMainWindow::showErrorMessage(const QString& error)
 void MetroMapMainWindow::slotCloseMap()
 {
   if (isMapChanged()) {
-    if (!trySaveMap()) {
+    slotSaveMap();
+    if (!m_needSaveMap) {
       QMessageBox::StandardButton answer = QMessageBox::warning(this, QObject::tr("Map not saved"),
                                                         QObject::tr("Continue without saving?"),
                                                         QMessageBox::Yes | QMessageBox::No,

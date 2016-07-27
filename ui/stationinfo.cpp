@@ -12,8 +12,6 @@
 #include <QBoxLayout>
 #include <QMessageBox>
 
-#include <QDebug>
-
 namespace metro {
 
 StationInfoWidget::StationInfoWidget(MetroMapMainWindow* ctrl, QWidget* parent) :
@@ -46,10 +44,9 @@ StationInfoWidget::~StationInfoWidget()
 void StationInfoWidget::slotSelectStation(quint32 id)
 {
   slotClear();
-//  setShowMode();
+  m_currentStation = id;
 
   if (m_controller->map().containsStation(id)) {
-    m_currentStation = id;
     const Station& currentStation = m_controller->map().stationById(id);
     m_ui->nameLineEdit->setText(currentStation.name());
     QString line = currentStation.line() > 0 ? QString::number(currentStation.line())
@@ -61,7 +58,7 @@ void StationInfoWidget::slotSelectStation(quint32 id)
       qint32 cost = currentStation.minimumCostTo(id, 0, &ok);
       if (ok) {
         StationWithCost* sc = new StationWithCost(&m_stations, this);
-        connect(sc, SIGNAL(removeClicked()), SLOT(slotRemoveStation()));
+        connect(sc, SIGNAL(removeClicked()), SLOT(slotRemoveNeighbour()));
         sc->setReadOnly(m_lockMode);
         sc->setStation(id);
         sc->setCost(cost);
@@ -77,7 +74,7 @@ void StationInfoWidget::slotSelectStation(quint32 id)
       qint32 cost = currentStation.minimumCostTo(id, 0, &ok);
       if (ok) {
         StationWithCost* sc = new StationWithCost(&m_stations, this);
-        connect(sc, SIGNAL(removeClicked()), SLOT(slotRemoveStation()));
+        connect(sc, SIGNAL(removeClicked()), SLOT(slotRemoveNeighbour()));
         sc->setReadOnly(m_lockMode);
         sc->setStation(id);
         sc->setCost(cost);
@@ -97,6 +94,17 @@ void StationInfoWidget::slotAddStation(quint32 id)
     slotChangeMode();
   }
   m_currentStation = id;
+}
+
+void StationInfoWidget::slotRemoveStation(quint32 id)
+{
+  Q_UNUSED(id);
+
+  slotClear();
+  if (!m_lockMode) {
+    slotChangeMode();
+  }
+  m_currentStation = 0;
 }
 
 void StationInfoWidget::slotMapChanged()
@@ -125,16 +133,26 @@ void StationInfoWidget::slotClear()
 
 void StationInfoWidget::slotChangeMode()
 {
+  bool ok = false;
   if (m_lockMode) {
-    setEditMode();
+    ok = setEditMode();
+    if (ok) {
+      emit editModeActivated();
+    }
   }
   else {
-    setShowMode();
+    ok = setShowMode();
+    if (ok) {
+      emit showModeActivated();
+    }
   }
-  m_lockMode = !m_lockMode;
+
+  if (ok) {
+    m_lockMode = !m_lockMode;
+  }
 }
 
-void StationInfoWidget::setEditMode()
+bool StationInfoWidget::setEditMode()
 {
   m_ui->lockButton->setText(QObject::tr("Save"));
   m_ui->nameLineEdit->setReadOnly(false);
@@ -153,17 +171,17 @@ void StationInfoWidget::setEditMode()
       }
     }
   }
-  emit editModeActivated();
+  return true;
 }
 
-void StationInfoWidget::setShowMode()
+bool StationInfoWidget::setShowMode()
 {
   try {
     saveStation();
   }
   catch (Exception& e) {
     QMessageBox::warning(this, QObject::tr("Station not saved"), QString(e.what()));
-    return;
+    return false;
   }
 
   m_ui->lockButton->setText(QObject::tr("Edit"));
@@ -183,7 +201,7 @@ void StationInfoWidget::setShowMode()
       }
     }
   }
-  emit showModeActivated();
+  return true;
 }
 
 void StationInfoWidget::saveStation()
@@ -212,8 +230,10 @@ void StationInfoWidget::saveStation()
       }
     }
 
-    if (st.railTracks().isEmpty() && st.crossOvers().isEmpty()) {
-      throw Exception(QObject::tr("Station must be have railtracks or crossovers"));
+    if (!m_controller->map().stationsId().isEmpty()) {
+      if (st.railTracks().isEmpty() && st.crossOvers().isEmpty()) {
+        throw Exception(QObject::tr("Station must be have railtracks or crossovers"));
+      }
     }
 
     if (m_controller->map().containsStation(m_currentStation)) {
@@ -234,7 +254,7 @@ void StationInfoWidget::saveStation()
 void StationInfoWidget::slotAddNextStation()
 {
   StationWithCost* sc = new StationWithCost(&m_stations, this);
-  connect(sc, SIGNAL(removeClicked()), SLOT(slotRemoveStation()));
+  connect(sc, SIGNAL(removeClicked()), SLOT(slotRemoveNeighbour()));
   sc->setReadOnly(false);
   QBoxLayout* lo = qobject_cast<QBoxLayout*>(m_ui->nextGroupBox->layout());
   if (lo != 0) {
@@ -245,7 +265,7 @@ void StationInfoWidget::slotAddNextStation()
 void StationInfoWidget::slotAddCrossStation()
 {
   StationWithCost* sc = new StationWithCost(&m_stations, this);
-  connect(sc, SIGNAL(removeClicked()), SLOT(slotRemoveStation()));
+  connect(sc, SIGNAL(removeClicked()), SLOT(slotRemoveNeighbour()));
   sc->setReadOnly(false);
   QBoxLayout* lo = qobject_cast<QBoxLayout*>(m_ui->crossoverGroupBox->layout());
   if (lo != 0) {
@@ -253,7 +273,7 @@ void StationInfoWidget::slotAddCrossStation()
   }
 }
 
-void StationInfoWidget::slotRemoveStation()
+void StationInfoWidget::slotRemoveNeighbour()
 {
   sender()->deleteLater();
 }
