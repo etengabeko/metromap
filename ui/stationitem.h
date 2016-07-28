@@ -3,6 +3,7 @@
 
 #include <QColor>
 #include <QGraphicsEllipseItem>
+#include <QGraphicsRectItem>
 
 class QGraphicsTextItem;
 class QPointF;
@@ -37,6 +38,19 @@ private:
   quint32 m_id;
   QColor m_color;
   QGraphicsTextItem* m_name;
+
+};
+
+class LabelItem : public QGraphicsRectItem
+{
+public:
+  explicit LabelItem(const QPointF& topleft, QGraphicsItem* parent = 0);
+  ~LabelItem();
+
+  static QRectF labelRect(const QPointF& topleft);
+
+private:
+  QGraphicsTextItem* m_text;
 
 };
 

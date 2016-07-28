@@ -52,11 +52,18 @@ private:
   void renderStations();
   void renderRailTracks();
   void renderCrossOvers();
+
   StationItem* itemById(quint32 id) const;
+
   void clearSelection();
   QList<quint32> selectedStations() const;
   void selectStation(StationItem* item, const QPoint& pos);
   StationItem* addStation(quint32 id, const QPointF& pos, const QColor& color = QColor(Qt::gray));
+
+  void setEnableStationsMoving(bool enable);
+
+  void showContextMenu(const QPoint& pos);
+  void saveItemPos(const QPoint& pos);
 
   bool eventFilter(QObject* watched, QEvent* event);
 

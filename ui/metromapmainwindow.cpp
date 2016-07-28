@@ -67,7 +67,6 @@ MetroMapMainWindow::MetroMapMainWindow(QWidget* parent) :
   connect(m_mapview, SIGNAL(stationRemoved(quint32)), SLOT(slotRemoveStation(quint32)));
 
   connect(m_station, SIGNAL(editModeActivated()), m_mapview, SLOT(slotToEditMode()));
-  connect(m_station, SIGNAL(showModeActivated()), m_mapview, SLOT(slotToShowMode()));
 }
 
 MetroMapMainWindow::~MetroMapMainWindow()
@@ -144,7 +143,7 @@ void MetroMapMainWindow::createMenu()
 
 void MetroMapMainWindow::createDockWidgets()
 {
-  QMenu* mapMenu = menuBar()->addMenu(QObject::tr("Map"));
+  QMenu* mapMenu = menuBar()->addMenu(QObject::tr("View"));
 
   QDockWidget* dock = new QDockWidget(QObject::tr("Station Info"), this);
   dock->setAllowedAreas(Qt::RightDockWidgetArea | Qt::LeftDockWidgetArea);
@@ -187,6 +186,7 @@ void MetroMapMainWindow::slotCreateMap()
   m_mapFileName.clear();
   m_map.reset(new Map());
   m_needSaveMap = true;
+  m_mapview->slotToEditMode();
 
   enableMenuActions(true);
 
@@ -235,6 +235,7 @@ void MetroMapMainWindow::slotLoadMap()
     m_needSaveMap = false;
 
     enableMenuActions(true);
+    m_mapview->slotToShowMode();
 
     emit mapChanged();
   }
@@ -249,6 +250,7 @@ void MetroMapMainWindow::slotSaveMap()
 
   if (trySaveMap()) {
     m_needSaveMap = false;
+    m_mapview->slotToShowMode();
   }
 }
 
@@ -262,6 +264,7 @@ void MetroMapMainWindow::slotSaveAsMap()
       m_mapFileName = fileName;
       slotMapChanged();
       m_needSaveMap = false;
+      m_mapview->slotToShowMode();
     }
   }
 }
@@ -303,21 +306,36 @@ void MetroMapMainWindow::showErrorMessage(const QString& error)
 void MetroMapMainWindow::slotCloseMap()
 {
   if (isMapChanged()) {
-    slotSaveMap();
-    if (!m_needSaveMap) {
-      QMessageBox::StandardButton answer = QMessageBox::warning(this, QObject::tr("Map not saved"),
-                                                        QObject::tr("Continue without saving?"),
-                                                        QMessageBox::Yes | QMessageBox::No,
-                                                        QMessageBox::No);
-      if (answer == QMessageBox::No) {
-        return;
-      }
+    QMessageBox::StandardButton answer = QMessageBox::information(this, QObject::tr("Map is changed"),
+                                                                  QObject::tr("Save changes before close?"),
+                                                                  QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel,
+                                                                  QMessageBox::Cancel);
+    switch (answer) {
+     case QMessageBox::Yes:
+         slotSaveMap();
+       break;
+     case QMessageBox::No:
+         m_needSaveMap = false;
+       break;
+     default:
+       return;
+    }
+  }
+
+  if (isMapChanged()) { // try again after saving
+    QMessageBox::StandardButton answer = QMessageBox::warning(this, QObject::tr("Map not saved"),
+                                                              QObject::tr("Continue without saving?"),
+                                                              QMessageBox::Yes | QMessageBox::No,
+                                                              QMessageBox::No);
+    if (answer == QMessageBox::No) {
+      return;
     }
   }
 
   m_mapFileName.clear();
   m_map.reset(new Map());
   m_needSaveMap = false;
+  m_mapview->slotToShowMode();
 
   enableMenuActions(false);
 
@@ -344,20 +362,11 @@ void MetroMapMainWindow::slotRemoveStation(quint32 id)
 
 void MetroMapMainWindow::closeEvent(QCloseEvent* event)
 {
-  if (m_needSaveMap) {
-    QMessageBox::StandardButton answer = QMessageBox::information(this, QObject::tr("Map is changed"),
-                                                                  QObject::tr("Save changes before quit?"),
-                                                                  QMessageBox::Yes | QMessageBox::No,
-                                                                  QMessageBox::Yes);
-    if (answer == QMessageBox::Yes) {
-      slotCloseMap();
-    }
-    else {
-      m_needSaveMap = false;
-    }
+  if (isMapChanged()) {
+    slotCloseMap();
   }
 
-  if (m_needSaveMap) {
+  if (isMapChanged()) { // try again after saving
     event->ignore();
     return;
   }

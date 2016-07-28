@@ -20,7 +20,10 @@
 #include <QMouseEvent>
 #include <QPair>
 #include <QPointF>
+#include <QRegExp>
 #include <QSettings>
+
+#include <QDebug>
 
 namespace {
 
@@ -33,10 +36,42 @@ QColor getLineColor(quint32 line)
   return QColor(colorName);
 }
 
+void saveStationPosition(quint32 id, const QPointF& pos)
+{
+  QSettings settings(settingsFileName(), QSettings::IniFormat);
+  settings.setValue(QString("station_positions/%1").arg(id),
+                    QString("(%1,%2)")
+                    .arg(QString::number(pos.x(), 'f', 2))
+                    .arg(QString::number(pos.y(), 'f', 2)));
+}
+
+QPointF loadStationPosition(quint32 id, const QPointF& defaultPos = QPointF())
+{
+  QSettings settings(settingsFileName(), QSettings::IniFormat);
+  if (settings.contains(QString("station_positions/%1").arg(id))) {
+    QString str_pos = settings.value(QString("station_positions/%1").arg(id)).toString();
+    QRegExp re("\\(([\\d|\\.|-]+),([\\d|\\.|-]+)\\)");
+    if (re.indexIn(str_pos) > -1) {
+      bool ok = false;
+      qreal x = re.cap(1).toDouble(&ok);
+      if (ok) {
+        qreal y = re.cap(2).toDouble(&ok);
+        if (ok) {
+          return QPointF(x,y);
+        }
+      }
+    }
+  }
+  return defaultPos;
+}
+
 int getLineWidth() { return 3; }
 
 qreal minZValue() { return -99.0; }
-qreal maxZValue() { return 99.0; }
+qreal medZValue() { return   0.0; }
+//qreal maxZValue() { return  99.0; }
+
+quint32 maxStationId() { return static_cast<quint32>(0xFFFFFFFF); }
 
 }
 
@@ -114,25 +149,27 @@ void MapView::slotShowRouteInfo(const QList<quint32>& stations)
   int railtracks = 0;
   int crossovers = 0;
 
-  for (QList<quint32>::const_iterator it = stations.constBegin(), end = stations.constEnd(); it != end-1; ++it) {
-    if (   m_controller->map().containsStation(*it)
-        && m_controller->map().containsStation(*(it+1))) {
-      const Station& from = m_controller->map().stationById(*it);
-      const Station& to = m_controller->map().stationById(*(it+1));
-      bool ok = false;
-      qint32 cost = from.minimumCostTo(to.id(), 0, &ok);
-      if (ok == true) {
-        totalCost += cost;
-        steps.append(from.name());
-        if (it+2 == end) {
-          steps.append(to.name());
+  if (!stations.isEmpty()) {
+    for (QList<quint32>::const_iterator it = stations.constBegin(), end = stations.constEnd(); it != end-1; ++it) {
+      if (   m_controller->map().containsStation(*it)
+             && m_controller->map().containsStation(*(it+1))) {
+        const Station& from = m_controller->map().stationById(*it);
+        const Station& to = m_controller->map().stationById(*(it+1));
+        bool ok = false;
+        qint32 cost = from.minimumCostTo(to.id(), 0, &ok);
+        if (ok == true) {
+          totalCost += cost;
+          steps.append(from.name());
+          if (it+2 == end) {
+            steps.append(to.name());
+          }
         }
-      }
-      if (from.railTracks().contains(to.id())) {
-        ++railtracks;
-      }
-      else if (from.crossOvers().contains(to.id())) {
-        ++crossovers;
+        if (from.railTracks().contains(to.id())) {
+          ++railtracks;
+        }
+        else if (from.crossOvers().contains(to.id())) {
+          ++crossovers;
+        }
       }
     }
   }
@@ -179,6 +216,17 @@ void MapView::slotMapChanged()
   renderStations();
   renderRailTracks();
   renderCrossOvers();
+
+  switch (m_mode) {
+    case SHOW:
+        setEnableStationsMoving(false);
+      break;
+    case EDIT:
+        setEnableStationsMoving(true);
+      break;
+    default:
+      break;
+  }
 }
 
 void MapView::renderStations()
@@ -188,16 +236,15 @@ void MapView::renderStations()
     stationsOnLines.insert(each, 0);
   }
 
-  QPointF pos = QPointF(0.0, 0.0);
+  QPointF defaultPos = QPointF(0.0, 0.0);
   const qreal vstep = StationItem::stationEllipseRadius()*4;
   const qreal hstep = vstep*4;
 
-  QList<quint32> allStations = m_controller->map().stationsId();
-  qSort(allStations);
-  QListIterator<quint32> it(allStations);
+  QListIterator<quint32> it(m_controller->map().stationsId());
   while (it.hasNext()) {
     const Station& each = m_controller->map().stationById(it.next());
-    QPointF eachPos(pos.x() + each.line()*hstep, pos.y() + stationsOnLines[each.line()]*vstep);
+    QPointF eachPos(defaultPos.x() + each.line()*hstep, defaultPos.y() + stationsOnLines[each.line()]*vstep);
+    eachPos = ::loadStationPosition(each.id(), eachPos);
     StationItem* item = addStation(each.id(), eachPos, ::getLineColor(each.line()));
     item->setStationName(each.name());
     stationsOnLines[each.line()] += 1;
@@ -262,55 +309,43 @@ bool MapView::eventFilter(QObject* watched, QEvent* event)
 {
   if (watched == m_ui->view->viewport()) {
     switch (event->type()) {
-      case QEvent::MouseButtonRelease: {
+      case QEvent::MouseButtonPress: {
           QMouseEvent* me = static_cast<QMouseEvent*>(event);
-          StationItem* item = dynamic_cast<StationItem*>(m_ui->view->scene()->itemAt(m_ui->view->mapToScene(me->pos())));
-          if (me->button() == Qt::LeftButton) {
-            selectStation(item, me->pos());
-          }
-          else if (me->button() == Qt::RightButton) {
-            const quint32 maxId = static_cast<quint32>(0xFFFFFFFF);
-            QMenu m;
-            QAction* add = new QAction(QObject::tr("Add station"), &m);
-            QAction* edit = 0;
-            QAction* remove = 0;
-            if (item != 0) {
-              edit = new QAction(QObject::tr("Edit station"), &m);
-              remove = new QAction(QObject::tr("Remove station"), &m);
-              m.addAction(edit);
-            }
-            m.addAction(add);
-            if (remove != 0) {
-              m.addAction(remove);
-            }
-
-            if (itemById(maxId) != 0) {
-              add->setEnabled(false);
-            }
-
-            QAction* answer = m.exec(mapToGlobal(me->pos()));
-            if (answer != 0) {
-              slotToEditMode();
-              if (answer == add) {
-                quint32 id = maxId;
-                while (m_controller->map().containsStation(id)) {
-                  if (--id == 0) {
-                    throw Exception(QObject::tr("Overflow limit of stations count"));
+          switch (m_mode) {
+            case SHOW:
+                if (me->button() == Qt::LeftButton) {
+                  StationItem* item = dynamic_cast<StationItem*>(m_ui->view->scene()->itemAt(m_ui->view->mapToScene(me->pos())));
+                  if (item != 0) {
+                    selectStation(item, me->pos());
                   }
                 }
-                StationItem* item = addStation(id, m_ui->view->mapToScene(me->pos()));
-                item->selectStation(true);
-                emit stationAdded(id);
+                else if (me->button() == Qt::RightButton) {
+                  showContextMenu(me->pos());
+                }
+              break;
+            case EDIT:
+                if (me->button() == Qt::RightButton) {
+                  showContextMenu(me->pos());
+                }
+              break;
+            default:
+              break;
+          }
+        }
+        break;
+      case QEvent::MouseButtonRelease: {
+          QMouseEvent* me = static_cast<QMouseEvent*>(event);
+          switch (m_mode) {
+            case SHOW:
+              break;
+            case EDIT:
+              if (me->button() == Qt::LeftButton) {
+                saveItemPos(me->pos());
+                showContextMenu(me->pos());
               }
-              else if (answer == edit) {
-                selectStation(item, me->pos());
-              }
-              else if (answer == remove) {
-                quint32 id = item->id();
-                delete item;
-                emit stationRemoved(id);
-              }
-            }
+              break;
+            default:
+              break;
           }
         }
         break;
@@ -321,24 +356,96 @@ bool MapView::eventFilter(QObject* watched, QEvent* event)
   return QWidget::eventFilter(watched, event);
 }
 
+void MapView::showContextMenu(const QPoint& pos)
+{
+  StationItem* item = dynamic_cast<StationItem*>(m_ui->view->scene()->itemAt(m_ui->view->mapToScene(pos)));
+
+  QMenu m;
+  QAction* mode = new QAction(QObject::tr("Edit mode"), &m);
+  mode->setCheckable(true);
+  m.addAction(mode);
+  QAction* add = 0;
+  QAction* edit = 0;
+  QAction* remove = 0;
+  switch (m_mode) {
+    case SHOW: {
+        mode->setChecked(false);
+      }
+      break;
+    case EDIT: {
+        mode->setChecked(true);
+        m.addSeparator();
+        add = new QAction(QObject::tr("Add station"), &m);
+        m.addAction(add);
+        if (itemById(::maxStationId()) != 0) {
+          add->setEnabled(false);
+        }
+        if (item != 0) {
+          edit = new QAction(QObject::tr("Edit station"), &m);
+          m.addAction(edit);
+          remove = new QAction(QObject::tr("Remove station"), &m);
+          m.addAction(remove);
+        }
+      }
+      break;
+    default:
+      break;
+  }
+
+  QAction* answer = m.exec(mapToGlobal(pos));
+  if (answer != 0) {
+    if (answer == mode) {
+      switch(m_mode) {
+        case SHOW:
+            slotToEditMode();
+          break;
+        case EDIT:
+            slotToShowMode();
+          break;
+        default:
+          break;
+      }
+    }
+    else if (answer == add) {
+      quint32 id = ::maxStationId();
+      while (m_controller->map().containsStation(id)) {
+        if (--id == 0) {
+          throw Exception(QObject::tr("Overflow limit of stations count"));
+        }
+      }
+      StationItem* st = addStation(id, m_ui->view->mapToScene(pos));
+      st->selectStation(true);
+      emit stationAdded(id);
+    }
+    else if (answer == edit) {
+      selectStation(item, pos);
+    }
+    else if (answer == remove) {
+      quint32 id = item->id();
+      delete item;
+      emit stationRemoved(id);
+    }
+  }
+}
+
 void MapView::slotToShowMode()
 {
   m_mode = SHOW;
-  foreach (QGraphicsItem* item, m_ui->view->scene()->items()) {
-    StationItem* st = dynamic_cast<StationItem*>(item);
-    if (st != 0) {
-      st->setFlag(QGraphicsItem::ItemIsMovable, false);
-    }
-  }
+  setEnableStationsMoving(false);
 }
 
 void MapView::slotToEditMode()
 {
   m_mode = EDIT;
+  setEnableStationsMoving(true);
+}
+
+void MapView::setEnableStationsMoving(bool enable)
+{
   foreach (QGraphicsItem* item, m_ui->view->scene()->items()) {
     StationItem* st = dynamic_cast<StationItem*>(item);
     if (st != 0) {
-      st->setFlag(QGraphicsItem::ItemIsMovable);
+      st->setFlag(QGraphicsItem::ItemIsMovable, enable);
     }
   }
 }
@@ -392,9 +499,20 @@ void MapView::selectStation(StationItem* item, const QPoint& pos)
 StationItem* MapView::addStation(quint32 id, const QPointF& pos, const QColor& color)
 {
   StationItem* item = new StationItem(id, pos, color);
-  item->setZValue(::maxZValue());
+  item->setZValue(::medZValue());
   m_ui->view->scene()->addItem(item);
   return item;
+}
+
+void MapView::saveItemPos(const QPoint& pos)
+{
+  QPointF scenePos = m_ui->view->mapToScene(pos);
+  StationItem* item = dynamic_cast<StationItem*>(m_ui->view->scene()->itemAt(scenePos));
+  if (   item != 0
+      && item->id() > 0
+      && item->id() < ::maxStationId()) {
+    ::saveStationPosition(item->id(), scenePos);
+  }
 }
 
 } // metro

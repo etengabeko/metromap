@@ -3,6 +3,7 @@
 #include <QBrush>
 #include <QGraphicsScene>
 #include <QGraphicsTextItem>
+#include <QObject>
 #include <QPen>
 #include <QRectF>
 #include <QString>
@@ -111,6 +112,25 @@ QPointF StationItem::coordRight() const
   QPointF topleft = boundingRect().topLeft();
   return (QPointF(topleft.x() + 2*stationEllipseRadius(),
                   topleft.y() + stationEllipseRadius()));
+}
+
+LabelItem::LabelItem(const QPointF& topleft, QGraphicsItem* parent) :
+  QGraphicsRectItem(labelRect(topleft), parent),
+  m_text(new QGraphicsTextItem(QObject::tr("Edit Mode"), this))
+{
+  QPointF textPos(topleft.x()+5.0, topleft.y()+5.0);
+  m_text->setPos(textPos);
+}
+
+LabelItem::~LabelItem()
+{
+}
+
+QRectF LabelItem::labelRect(const QPointF& topleft)
+{
+  const qreal w = 100.0,
+              h = 30.0;
+  return QRectF(topleft, QSizeF(w,h));
 }
 
 }
