@@ -8,6 +8,7 @@ include(common.pro)
 
 HEADERS = \
   exception/exception.h      \
+  settings/settings.h        \
   station/station.h          \
   map/map.h                  \
   ui/findroutes.h            \
@@ -21,6 +22,7 @@ HEADERS = \
   ui/stationwithcost.h
 
 SOURCES = \
+  settings/settings.cpp      \
   station/station.cpp        \
   map/map.cpp                \
   ui/findroutes.cpp          \

@@ -15,10 +15,11 @@ namespace metro {
 class StationItem : public QGraphicsEllipseItem
 {
 public:
-  explicit StationItem(quint32 id, const QPointF& topleft, const QColor& color, QGraphicsItem* parent = 0);
+  explicit StationItem(quint32 id, const QColor& color, QGraphicsItem* parent = 0);
   ~StationItem();
 
   void setStationName(const QString& name);
+  void setDefaultPos();
 
   quint32 id() const;
 
@@ -32,6 +33,10 @@ public:
   QPointF coordRight() const;
 
   static qreal stationEllipseRadius();
+
+private:
+  void mouseMoveEvent(QGraphicsSceneMouseEvent* event);
+
   static QRectF stationRect(const QPointF& topleft);
 
 private:

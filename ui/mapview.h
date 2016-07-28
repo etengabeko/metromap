@@ -1,6 +1,7 @@
 #ifndef METROMAP_UI_MAPVIEW_H
 #define METROMAP_UI_MAPVIEW_H
 
+#include <QPointF>
 #include <QWidget>
 
 template <typename T> class QList;
@@ -58,12 +59,11 @@ private:
   void clearSelection();
   QList<quint32> selectedStations() const;
   void selectStation(StationItem* item, const QPoint& pos);
-  StationItem* addStation(quint32 id, const QPointF& pos, const QColor& color = QColor(Qt::gray));
+  StationItem* addStation(quint32 id, const QColor& color, const QPointF& pos = QPointF());
 
   void setEnableStationsMoving(bool enable);
 
   void showContextMenu(const QPoint& pos);
-  void saveItemPos(const QPoint& pos);
 
   bool eventFilter(QObject* watched, QEvent* event);
 

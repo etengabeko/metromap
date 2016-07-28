@@ -6,6 +6,7 @@
 
 #include <exception/exception.h>
 #include <map/map.h>
+#include <settings/settings.h>
 #include <station/station.h>
 
 #include <QAction>
@@ -20,60 +21,6 @@
 #include <QMouseEvent>
 #include <QPair>
 #include <QPointF>
-#include <QRegExp>
-#include <QSettings>
-
-#include <QDebug>
-
-namespace {
-
-QString settingsFileName() { return QString("%1/../etc/metromap.conf").arg(qApp->applicationDirPath()); }
-
-QColor getLineColor(quint32 line)
-{
-  QSettings settings(settingsFileName(), QSettings::IniFormat);
-  QString colorName = settings.value(QString("line_colors/%1").arg(line), QString("gray")).toString();
-  return QColor(colorName);
-}
-
-void saveStationPosition(quint32 id, const QPointF& pos)
-{
-  QSettings settings(settingsFileName(), QSettings::IniFormat);
-  settings.setValue(QString("station_positions/%1").arg(id),
-                    QString("(%1,%2)")
-                    .arg(QString::number(pos.x(), 'f', 2))
-                    .arg(QString::number(pos.y(), 'f', 2)));
-}
-
-QPointF loadStationPosition(quint32 id, const QPointF& defaultPos = QPointF())
-{
-  QSettings settings(settingsFileName(), QSettings::IniFormat);
-  if (settings.contains(QString("station_positions/%1").arg(id))) {
-    QString str_pos = settings.value(QString("station_positions/%1").arg(id)).toString();
-    QRegExp re("\\(([\\d|\\.|-]+),([\\d|\\.|-]+)\\)");
-    if (re.indexIn(str_pos) > -1) {
-      bool ok = false;
-      qreal x = re.cap(1).toDouble(&ok);
-      if (ok) {
-        qreal y = re.cap(2).toDouble(&ok);
-        if (ok) {
-          return QPointF(x,y);
-        }
-      }
-    }
-  }
-  return defaultPos;
-}
-
-int getLineWidth() { return 3; }
-
-qreal minZValue() { return -99.0; }
-qreal medZValue() { return   0.0; }
-//qreal maxZValue() { return  99.0; }
-
-quint32 maxStationId() { return static_cast<quint32>(0xFFFFFFFF); }
-
-}
 
 namespace metro {
 
@@ -231,23 +178,13 @@ void MapView::slotMapChanged()
 
 void MapView::renderStations()
 {
-  QMap<quint32, int> stationsOnLines;
-  foreach (quint32 each, m_controller->map().linesId()) {
-    stationsOnLines.insert(each, 0);
-  }
-
-  QPointF defaultPos = QPointF(0.0, 0.0);
-  const qreal vstep = StationItem::stationEllipseRadius()*4;
-  const qreal hstep = vstep*4;
-
   QListIterator<quint32> it(m_controller->map().stationsId());
   while (it.hasNext()) {
     const Station& each = m_controller->map().stationById(it.next());
-    QPointF eachPos(defaultPos.x() + each.line()*hstep, defaultPos.y() + stationsOnLines[each.line()]*vstep);
-    eachPos = ::loadStationPosition(each.id(), eachPos);
-    StationItem* item = addStation(each.id(), eachPos, ::getLineColor(each.line()));
+    StationItem* item = addStation(each.id(),
+                                   settings::Loader::getLineColor(each.line()),
+                                   settings::Loader::loadStationPosition(each.id()));
     item->setStationName(each.name());
-    stationsOnLines[each.line()] += 1;
   }
 }
 
@@ -273,10 +210,10 @@ void MapView::renderRailTracks()
         if (to != 0) {
           QGraphicsLineItem* line = new QGraphicsLineItem(QLineF(item->coordCenter(), to->coordCenter()));
           QPen p;
-          p.setWidth(::getLineWidth());
-          p.setColor(::getLineColor(st.line()));
+          p.setWidth(settings::Loader::getPenWidth());
+          p.setColor(settings::Loader::getLineColor(st.line()));
           line->setPen(p);
-          line->setZValue(::minZValue());
+          line->setZValue(settings::Loader::minZValue());
           m_ui->view->scene()->addItem(line);
         }
       }
@@ -297,7 +234,7 @@ void MapView::renderCrossOvers()
           QPen p;
           p.setStyle(Qt::DotLine);
           line->setPen(p);
-          line->setZValue(::minZValue());
+          line->setZValue(settings::Loader::minZValue());
           m_ui->view->scene()->addItem(line);
         }
       }
@@ -311,41 +248,14 @@ bool MapView::eventFilter(QObject* watched, QEvent* event)
     switch (event->type()) {
       case QEvent::MouseButtonPress: {
           QMouseEvent* me = static_cast<QMouseEvent*>(event);
-          switch (m_mode) {
-            case SHOW:
-                if (me->button() == Qt::LeftButton) {
-                  StationItem* item = dynamic_cast<StationItem*>(m_ui->view->scene()->itemAt(m_ui->view->mapToScene(me->pos())));
-                  if (item != 0) {
-                    selectStation(item, me->pos());
-                  }
-                }
-                else if (me->button() == Qt::RightButton) {
-                  showContextMenu(me->pos());
-                }
-              break;
-            case EDIT:
-                if (me->button() == Qt::RightButton) {
-                  showContextMenu(me->pos());
-                }
-              break;
-            default:
-              break;
+          if (me->button() == Qt::LeftButton) {
+            StationItem* item = dynamic_cast<StationItem*>(m_ui->view->scene()->itemAt(m_ui->view->mapToScene(me->pos())));
+            if (item != 0) {
+              selectStation(item, me->pos());
+            }
           }
-        }
-        break;
-      case QEvent::MouseButtonRelease: {
-          QMouseEvent* me = static_cast<QMouseEvent*>(event);
-          switch (m_mode) {
-            case SHOW:
-              break;
-            case EDIT:
-              if (me->button() == Qt::LeftButton) {
-                saveItemPos(me->pos());
-                showContextMenu(me->pos());
-              }
-              break;
-            default:
-              break;
+          else if (me->button() == Qt::RightButton) {
+            showContextMenu(me->pos());
           }
         }
         break;
@@ -377,7 +287,7 @@ void MapView::showContextMenu(const QPoint& pos)
         m.addSeparator();
         add = new QAction(QObject::tr("Add station"), &m);
         m.addAction(add);
-        if (itemById(::maxStationId()) != 0) {
+        if (itemById(settings::Loader::maxStationId()) != 0) {
           add->setEnabled(false);
         }
         if (item != 0) {
@@ -407,13 +317,13 @@ void MapView::showContextMenu(const QPoint& pos)
       }
     }
     else if (answer == add) {
-      quint32 id = ::maxStationId();
+      quint32 id = settings::Loader::maxStationId();
       while (m_controller->map().containsStation(id)) {
         if (--id == 0) {
           throw Exception(QObject::tr("Overflow limit of stations count"));
         }
       }
-      StationItem* st = addStation(id, m_ui->view->mapToScene(pos));
+      StationItem* st = addStation(id, QColor(Qt::gray), m_ui->view->mapToScene(pos));
       st->selectStation(true);
       emit stationAdded(id);
     }
@@ -496,23 +406,19 @@ void MapView::selectStation(StationItem* item, const QPoint& pos)
   }
 }
 
-StationItem* MapView::addStation(quint32 id, const QPointF& pos, const QColor& color)
+StationItem* MapView::addStation(quint32 id, const QColor& color, const QPointF& pos)
 {
-  StationItem* item = new StationItem(id, pos, color);
-  item->setZValue(::medZValue());
+  StationItem* item = new StationItem(id, color);
+  item->setZValue(settings::Loader::medZValue());
   m_ui->view->scene()->addItem(item);
-  return item;
-}
 
-void MapView::saveItemPos(const QPoint& pos)
-{
-  QPointF scenePos = m_ui->view->mapToScene(pos);
-  StationItem* item = dynamic_cast<StationItem*>(m_ui->view->scene()->itemAt(scenePos));
-  if (   item != 0
-      && item->id() > 0
-      && item->id() < ::maxStationId()) {
-    ::saveStationPosition(item->id(), scenePos);
+  if (!pos.isNull()) {
+    item->setPos(pos);
   }
+  else {
+    item->setDefaultPos();
+  }
+  return item;
 }
 
 } // metro

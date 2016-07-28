@@ -1,7 +1,10 @@
 #include "stationitem.h"
 
+#include <settings/settings.h>
+
 #include <QBrush>
 #include <QGraphicsScene>
+#include <QGraphicsSceneMouseEvent>
 #include <QGraphicsTextItem>
 #include <QObject>
 #include <QPen>
@@ -20,26 +23,26 @@ QBrush unselectedBrush(const QColor& color)
   return QBrush(color, Qt::SolidPattern);
 }
 
-int getLineWidth() { return 3; }
-
 }
 
 namespace metro {
 
-StationItem::StationItem(quint32 id, const QPointF& topleft, const QColor& color, QGraphicsItem* parent) :
-  QGraphicsEllipseItem(stationRect(topleft), parent),
+StationItem::StationItem(quint32 id, const QColor& color, QGraphicsItem* parent) :
+  QGraphicsEllipseItem(parent),
   m_id(id),
   m_color(color),
   m_name(new QGraphicsTextItem(this))
 {
   QPen p;
   p.setColor(m_color);
-  p.setWidth(::getLineWidth());
+  p.setWidth(settings::Loader::getPenWidth());
   setPen(p);
   setBrush(::unselectedBrush(m_color));
 
-  QPointF namePos(topleft.x() + stationEllipseRadius()*2, topleft.y());
-  m_name->setPos(namePos);
+  setRect(stationRect(boundingRect().topLeft()));
+  m_name->setPos(coordRight());
+
+  setAcceptDrops(true);
 }
 
 StationItem::~StationItem()
@@ -53,7 +56,7 @@ quint32 StationItem::id() const
 
 qreal StationItem::stationEllipseRadius()
 {
-  return 15.0;
+  return settings::Loader::getStationRadius();
 }
 
 QRectF StationItem::stationRect(const QPointF& topleft)
@@ -64,6 +67,17 @@ QRectF StationItem::stationRect(const QPointF& topleft)
 void StationItem::setStationName(const QString& name)
 {
   m_name->setPlainText(name);
+}
+
+void StationItem::setDefaultPos()
+{
+  QPointF defaultPos = QPointF(0.0, 0.0);
+  const qreal vstep = stationEllipseRadius()*4;
+  const qreal hstep = vstep*4;
+
+  defaultPos = QPointF(defaultPos.x() + (m_id/10)*hstep,
+                       defaultPos.y() + (m_id%10)*vstep);
+  setPos(defaultPos);
 }
 
 void StationItem::selectStation(bool selected)
@@ -112,6 +126,15 @@ QPointF StationItem::coordRight() const
   QPointF topleft = boundingRect().topLeft();
   return (QPointF(topleft.x() + 2*stationEllipseRadius(),
                   topleft.y() + stationEllipseRadius()));
+}
+
+void StationItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
+{
+  if (   m_id > 0
+      && m_id < settings::Loader::maxStationId()) {
+    settings::Loader::saveStationPosition(m_id, mapToScene(boundingRect().topLeft()));
+  }
+  QGraphicsEllipseItem::mouseMoveEvent(event);
 }
 
 LabelItem::LabelItem(const QPointF& topleft, QGraphicsItem* parent) :
