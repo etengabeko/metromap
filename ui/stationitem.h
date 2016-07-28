@@ -37,6 +37,9 @@ public:
 private:
   void mouseMoveEvent(QGraphicsSceneMouseEvent* event);
 
+  void updateRailTracks();
+  void updateCrossOvers();
+
   static QRectF stationRect(const QPointF& topleft);
 
 private:

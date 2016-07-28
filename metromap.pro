@@ -15,6 +15,7 @@ HEADERS = \
   ui/managebuttons.h         \
   ui/mapview.h               \
   ui/metromapmainwindow.h    \
+  ui/railtrackitem.h         \
   ui/selectstation.h         \
   ui/selectstationdialog.h   \
   ui/stationinfo.h           \
@@ -29,6 +30,7 @@ SOURCES = \
   ui/managebuttons.cpp       \
   ui/mapview.cpp             \
   ui/metromapmainwindow.cpp  \
+  ui/railtrackitem.cpp       \
   ui/selectstation.cpp       \
   ui/selectstationdialog.cpp \
   ui/stationinfo.cpp         \

@@ -1,5 +1,7 @@
 #include "stationitem.h"
 
+#include "railtrackitem.h"
+
 #include <settings/settings.h>
 
 #include <QBrush>
@@ -40,9 +42,7 @@ StationItem::StationItem(quint32 id, const QColor& color, QGraphicsItem* parent)
   setBrush(::unselectedBrush(m_color));
 
   setRect(stationRect(boundingRect().topLeft()));
-  m_name->setPos(coordRight());
-
-  setAcceptDrops(true);
+  m_name->setPos(mapFromScene(coordRight()));
 }
 
 StationItem::~StationItem()
@@ -97,35 +97,35 @@ bool StationItem::isSelectedStation() const
 
 QPointF StationItem::coordCenter() const
 {
-  return boundingRect().center();
+  return mapToScene(boundingRect().center());
 }
 
 QPointF StationItem::coordTop() const
 {
   QPointF topleft = boundingRect().topLeft();
-  return (QPointF(topleft.x() + stationEllipseRadius(),
-                  topleft.y()));
+  return mapToScene(QPointF(topleft.x() + stationEllipseRadius(),
+                             topleft.y()));
 }
 
 QPointF StationItem::coordBottom() const
 {
   QPointF topleft = boundingRect().topLeft();
-  return (QPointF(topleft.x() + stationEllipseRadius(),
-                  topleft.y() + 2*stationEllipseRadius()));
+  return mapToScene(QPointF(topleft.x() + stationEllipseRadius(),
+                            topleft.y() + 2*stationEllipseRadius()));
 }
 
 QPointF StationItem::coordLeft() const
 {
   QPointF topleft = boundingRect().topLeft();
-  return (QPointF(topleft.x(),
-                  topleft.y() + stationEllipseRadius()));
+  return mapToScene(QPointF(topleft.x(),
+                            topleft.y() + stationEllipseRadius()));
 }
 
 QPointF StationItem::coordRight() const
 {
   QPointF topleft = boundingRect().topLeft();
-  return (QPointF(topleft.x() + 2*stationEllipseRadius(),
-                  topleft.y() + stationEllipseRadius()));
+  return mapToScene(QPointF(topleft.x() + 2*stationEllipseRadius(),
+                            topleft.y() + stationEllipseRadius()));
 }
 
 void StationItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
@@ -133,8 +133,32 @@ void StationItem::mouseMoveEvent(QGraphicsSceneMouseEvent *event)
   if (   m_id > 0
       && m_id < settings::Loader::maxStationId()) {
     settings::Loader::saveStationPosition(m_id, mapToScene(boundingRect().topLeft()));
+    updateRailTracks();
+    updateCrossOvers();
   }
   QGraphicsEllipseItem::mouseMoveEvent(event);
+}
+
+void StationItem::updateRailTracks()
+{
+  if (scene() != 0) {
+    foreach (QGraphicsItem* each, scene()->items()) {
+      RailTrackItem* track = qgraphicsitem_cast<RailTrackItem*>(each);
+      if (track != 0) {
+        if (track->stationFrom() == m_id) {
+          track->setCoordFrom(coordCenter());
+        }
+        else if (track->stationTo() == m_id) {
+          track->setCoordTo(coordCenter());
+        }
+      }
+    }
+  }
+}
+
+void StationItem::updateCrossOvers()
+{
+  // TODO
 }
 
 LabelItem::LabelItem(const QPointF& topleft, QGraphicsItem* parent) :

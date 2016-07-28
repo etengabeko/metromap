@@ -2,6 +2,7 @@
 #include "ui_mapview.h"
 
 #include "metromapmainwindow.h"
+#include "railtrackitem.h"
 #include "stationitem.h"
 
 #include <exception/exception.h>
@@ -137,7 +138,7 @@ void MapView::slotDeselectStation(quint32 id)
 void MapView::clearSelection()
 {
   foreach (QGraphicsItem* each, m_ui->view->scene()->items()) {
-    StationItem* item = dynamic_cast<StationItem*>(each);
+    StationItem* item = qgraphicsitem_cast<StationItem*>(each);
     if (item != 0) {
       item->selectStation(false);
     }
@@ -148,7 +149,7 @@ QList<quint32> MapView::selectedStations() const
 {
   QList<quint32> result;
   foreach (QGraphicsItem* each, m_ui->view->scene()->items()) {
-    StationItem* item = dynamic_cast<StationItem*>(each);
+    StationItem* item = qgraphicsitem_cast<StationItem*>(each);
     if (item != 0 && item->isSelectedStation()) {
       result.append(item->id());
     }
@@ -191,7 +192,7 @@ void MapView::renderStations()
 StationItem* MapView::itemById(quint32 id) const
 {
   foreach (QGraphicsItem* each, m_ui->view->scene()->items()) {
-    StationItem* item = dynamic_cast<StationItem*>(each);
+    StationItem* item = qgraphicsitem_cast<StationItem*>(each);
     if (item != 0 && item->id() == id) {
       return item;
     }
@@ -202,19 +203,15 @@ StationItem* MapView::itemById(quint32 id) const
 void MapView::renderRailTracks()
 {
   foreach (QGraphicsItem* each, m_ui->view->scene()->items()) {
-    StationItem* item = dynamic_cast<StationItem*>(each);
-    if (item != 0 && m_controller->map().containsStation(item->id())) {
-      const Station& st = m_controller->map().stationById(item->id());
+    StationItem* itemFrom = qgraphicsitem_cast<StationItem*>(each);
+    if (itemFrom != 0 && m_controller->map().containsStation(itemFrom->id())) {
+      const Station& st = m_controller->map().stationById(itemFrom->id());
       foreach (quint32 id, st.railTracks()) {
-        StationItem* to = itemById(id);
-        if (to != 0) {
-          QGraphicsLineItem* line = new QGraphicsLineItem(QLineF(item->coordCenter(), to->coordCenter()));
-          QPen p;
-          p.setWidth(settings::Loader::getPenWidth());
-          p.setColor(settings::Loader::getLineColor(st.line()));
-          line->setPen(p);
-          line->setZValue(settings::Loader::minZValue());
-          m_ui->view->scene()->addItem(line);
+        StationItem* itemTo = itemById(id);
+        if (itemTo != 0) {
+          RailTrackItem* rt = new RailTrackItem(*itemFrom, *itemTo, settings::Loader::getLineColor(st.line()));
+          rt->setZValue(settings::Loader::minZValue());
+          m_ui->view->scene()->addItem(rt);
         }
       }
     }
@@ -223,23 +220,23 @@ void MapView::renderRailTracks()
 
 void MapView::renderCrossOvers()
 {
-  foreach (QGraphicsItem* each, m_ui->view->scene()->items()) {
-    StationItem* item = dynamic_cast<StationItem*>(each);
-    if (item != 0 && m_controller->map().containsStation(item->id())) {
-      const Station& st = m_controller->map().stationById(item->id());
-      foreach (quint32 id, st.crossOvers()) {
-        StationItem* to = itemById(id);
-        if (to != 0) {
-          QGraphicsLineItem* line = new QGraphicsLineItem(QLineF(item->coordCenter(), to->coordCenter()));
-          QPen p;
-          p.setStyle(Qt::DotLine);
-          line->setPen(p);
-          line->setZValue(settings::Loader::minZValue());
-          m_ui->view->scene()->addItem(line);
-        }
-      }
-    }
-  }
+//  foreach (QGraphicsItem* each, m_ui->view->scene()->items()) {
+//    StationItem* item = qgraphicsitem_cast<StationItem*>(each);
+//    if (item != 0 && m_controller->map().containsStation(item->id())) {
+//      const Station& st = m_controller->map().stationById(item->id());
+//      foreach (quint32 id, st.crossOvers()) {
+//        StationItem* to = itemById(id);
+//        if (to != 0) {
+//          QGraphicsLineItem* line = new QGraphicsLineItem(QLineF(item->coordCenter(), to->coordCenter()));
+//          QPen p;
+//          p.setStyle(Qt::DotLine);
+//          line->setPen(p);
+//          line->setZValue(settings::Loader::minZValue());
+//          m_ui->view->scene()->addItem(line);
+//        }
+//      }
+//    }
+//  }
 }
 
 bool MapView::eventFilter(QObject* watched, QEvent* event)
@@ -249,7 +246,7 @@ bool MapView::eventFilter(QObject* watched, QEvent* event)
       case QEvent::MouseButtonPress: {
           QMouseEvent* me = static_cast<QMouseEvent*>(event);
           if (me->button() == Qt::LeftButton) {
-            StationItem* item = dynamic_cast<StationItem*>(m_ui->view->scene()->itemAt(m_ui->view->mapToScene(me->pos())));
+            StationItem* item = qgraphicsitem_cast<StationItem*>(m_ui->view->scene()->itemAt(m_ui->view->mapToScene(me->pos())));
             if (item != 0) {
               selectStation(item, me->pos());
             }
@@ -268,7 +265,7 @@ bool MapView::eventFilter(QObject* watched, QEvent* event)
 
 void MapView::showContextMenu(const QPoint& pos)
 {
-  StationItem* item = dynamic_cast<StationItem*>(m_ui->view->scene()->itemAt(m_ui->view->mapToScene(pos)));
+  StationItem* item = qgraphicsitem_cast<StationItem*>(m_ui->view->scene()->itemAt(m_ui->view->mapToScene(pos)));
 
   QMenu m;
   QAction* mode = new QAction(QObject::tr("Edit mode"), &m);
@@ -353,7 +350,7 @@ void MapView::slotToEditMode()
 void MapView::setEnableStationsMoving(bool enable)
 {
   foreach (QGraphicsItem* item, m_ui->view->scene()->items()) {
-    StationItem* st = dynamic_cast<StationItem*>(item);
+    StationItem* st = qgraphicsitem_cast<StationItem*>(item);
     if (st != 0) {
       st->setFlag(QGraphicsItem::ItemIsMovable, enable);
     }
