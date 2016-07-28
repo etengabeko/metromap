@@ -1,6 +1,7 @@
 #include "mapview.h"
 #include "ui_mapview.h"
 
+#include "crossoveritem.h"
 #include "metromapmainwindow.h"
 #include "railtrackitem.h"
 #include "stationitem.h"
@@ -30,14 +31,13 @@ MapView::MapView(MetroMapMainWindow* ctrl, QWidget* parent) :
   m_ui(new Ui::MapView()),
   m_controller(ctrl),
   m_mode(SHOW),
+  m_hasRoute(false),
   m_from(0),
   m_to(0)
 {
   Q_CHECK_PTR(m_controller);
 
   m_ui->setupUi(this);
-
-  m_ui->routeGroupBox->hide();
 
   initScene();
 
@@ -74,75 +74,87 @@ void MapView::slotSelectStations(const QList<quint32>& stations)
   QListIterator<quint32> it(stations);
   while (it.hasNext()) {
     quint32 id = it.next();
-    StationItem* item = itemById(id);
+    StationItem* item = stationItemById(id);
     if (item != 0) {
       item->selectStation(true);
     }
   }
-  if (m_ui->routeGroupBox->isVisible()) {
-    m_ui->routeGroupBox->hide();
-  }
 }
 
-void MapView::slotShowRouteInfo(const QList<quint32>& stations)
+void MapView::slotShowRoute(const QList<quint32>& stations)
 {
   slotSelectStations(stations);
+  transparenceRoute(stations);
+  m_hasRoute = true;
+}
 
-  if (!m_ui->routeGroupBox->isVisible()) {
-    m_ui->routeGroupBox->show();
+void MapView::transparenceRoute(const QList<quint32>& route)
+{
+  if (route.isEmpty()) {
+    return;
   }
 
-  QStringList steps;
-  qint32 totalCost = 0;
-  int railtracks = 0;
-  int crossovers = 0;
+  const qreal transparentLevel = 1.0;
+  const qreal opacityLevel = 0.2;
 
-  if (!stations.isEmpty()) {
-    for (QList<quint32>::const_iterator it = stations.constBegin(), end = stations.constEnd(); it != end-1; ++it) {
-      if (   m_controller->map().containsStation(*it)
-             && m_controller->map().containsStation(*(it+1))) {
-        const Station& from = m_controller->map().stationById(*it);
-        const Station& to = m_controller->map().stationById(*(it+1));
-        bool ok = false;
-        qint32 cost = from.minimumCostTo(to.id(), 0, &ok);
-        if (ok == true) {
-          totalCost += cost;
-          steps.append(from.name());
-          if (it+2 == end) {
-            steps.append(to.name());
-          }
-        }
-        if (from.railTracks().contains(to.id())) {
-          ++railtracks;
-        }
-        else if (from.crossOvers().contains(to.id())) {
-          ++crossovers;
+  foreach (QGraphicsItem* item, m_ui->view->scene()->items()) {
+    item->setOpacity(opacityLevel);
+  }
+
+  {
+    QListIterator<quint32> it(route);
+    while (it.hasNext()) {
+      StationItem* each = stationItemById(it.next());
+      if (each != 0) {
+        each->setOpacity(transparentLevel);
+      }
+    }
+  }
+
+  typedef QList<quint32>::const_iterator iter_t;
+  for (iter_t it = route.constBegin(), end = route.constEnd(); it != end; ++it) {
+    if (it+1 != end) {
+      quint32 from = *it;
+      quint32 to = *(it+1);
+      RailTrackItem* rt = railTrackItemById(from, to);
+      if (rt != 0) {
+        rt->setOpacity(transparentLevel);
+      }
+      else {
+        CrossOverItem* co = crossOverItemById(from, to);
+        if (co != 0) {
+          co->setOpacity(transparentLevel);
         }
       }
     }
   }
-  m_ui->stepsLineEdit->setText(steps.join(" => "));
-  m_ui->costLineEdit->setText(QString::number(totalCost));
-  m_ui->railtracksLineEdit->setText(QString::number(railtracks));
-  m_ui->crossoversLineEdit->setText(QString::number(crossovers));
 }
 
 void MapView::slotDeselectStation(quint32 id)
 {
-  StationItem* item = itemById(id);
+  StationItem* item = stationItemById(id);
   if (item != 0) {
     item->selectStation(false);
+  }
+
+  if (m_from == id) {
+    m_from = 0;
+  }
+  if (m_to == id) {
+    m_to = 0;
   }
 }
 
 void MapView::clearSelection()
 {
   foreach (QGraphicsItem* each, m_ui->view->scene()->items()) {
+    each->setOpacity(1.0);
     StationItem* item = qgraphicsitem_cast<StationItem*>(each);
     if (item != 0) {
       item->selectStation(false);
     }
   }
+  m_hasRoute = false;
 }
 
 QList<quint32> MapView::selectedStations() const
@@ -189,11 +201,35 @@ void MapView::renderStations()
   }
 }
 
-StationItem* MapView::itemById(quint32 id) const
+StationItem* MapView::stationItemById(quint32 id) const
 {
   foreach (QGraphicsItem* each, m_ui->view->scene()->items()) {
     StationItem* item = qgraphicsitem_cast<StationItem*>(each);
     if (item != 0 && item->id() == id) {
+      return item;
+    }
+  }
+  return 0;
+}
+
+RailTrackItem* MapView::railTrackItemById(quint32 from, quint32 to) const
+{
+  foreach (QGraphicsItem* each, m_ui->view->scene()->items()) {
+    RailTrackItem* item = qgraphicsitem_cast<RailTrackItem*>(each);
+    if (   item != 0
+        && (item->stationFrom() == from && item->stationTo() == to)) {
+      return item;
+    }
+  }
+  return 0;
+}
+
+CrossOverItem* MapView::crossOverItemById(quint32 from, quint32 to) const
+{
+  foreach (QGraphicsItem* each, m_ui->view->scene()->items()) {
+    CrossOverItem* item = qgraphicsitem_cast<CrossOverItem*>(each);
+    if (   item != 0
+        && (item->stationFrom() == from && item->stationTo() == to)) {
       return item;
     }
   }
@@ -207,10 +243,10 @@ void MapView::renderRailTracks()
     if (itemFrom != 0 && m_controller->map().containsStation(itemFrom->id())) {
       const Station& st = m_controller->map().stationById(itemFrom->id());
       foreach (quint32 id, st.railTracks()) {
-        StationItem* itemTo = itemById(id);
+        StationItem* itemTo = stationItemById(id);
         if (itemTo != 0) {
           RailTrackItem* rt = new RailTrackItem(*itemFrom, *itemTo, settings::Loader::getLineColor(st.line()));
-          rt->setZValue(settings::Loader::minZValue());
+          rt->setZValue(settings::Loader::medZValue());
           m_ui->view->scene()->addItem(rt);
         }
       }
@@ -220,23 +256,20 @@ void MapView::renderRailTracks()
 
 void MapView::renderCrossOvers()
 {
-//  foreach (QGraphicsItem* each, m_ui->view->scene()->items()) {
-//    StationItem* item = qgraphicsitem_cast<StationItem*>(each);
-//    if (item != 0 && m_controller->map().containsStation(item->id())) {
-//      const Station& st = m_controller->map().stationById(item->id());
-//      foreach (quint32 id, st.crossOvers()) {
-//        StationItem* to = itemById(id);
-//        if (to != 0) {
-//          QGraphicsLineItem* line = new QGraphicsLineItem(QLineF(item->coordCenter(), to->coordCenter()));
-//          QPen p;
-//          p.setStyle(Qt::DotLine);
-//          line->setPen(p);
-//          line->setZValue(settings::Loader::minZValue());
-//          m_ui->view->scene()->addItem(line);
-//        }
-//      }
-//    }
-//  }
+  foreach (QGraphicsItem* each, m_ui->view->scene()->items()) {
+    StationItem* itemFrom = qgraphicsitem_cast<StationItem*>(each);
+    if (itemFrom != 0 && m_controller->map().containsStation(itemFrom->id())) {
+      const Station& st = m_controller->map().stationById(itemFrom->id());
+      foreach (quint32 id, st.crossOvers()) {
+        StationItem* itemTo = stationItemById(id);
+        if (itemTo != 0) {
+          CrossOverItem* co = new CrossOverItem(*itemFrom, *itemTo);
+          co->setZValue(settings::Loader::minZValue());
+          m_ui->view->scene()->addItem(co);
+        }
+      }
+    }
+  }
 }
 
 bool MapView::eventFilter(QObject* watched, QEvent* event)
@@ -248,7 +281,7 @@ bool MapView::eventFilter(QObject* watched, QEvent* event)
           if (me->button() == Qt::LeftButton) {
             StationItem* item = qgraphicsitem_cast<StationItem*>(m_ui->view->scene()->itemAt(m_ui->view->mapToScene(me->pos())));
             if (item != 0) {
-              selectStation(item, me->pos());
+              selectStation(item);
             }
           }
           else if (me->button() == Qt::RightButton) {
@@ -284,7 +317,7 @@ void MapView::showContextMenu(const QPoint& pos)
         m.addSeparator();
         add = new QAction(QObject::tr("Add station"), &m);
         m.addAction(add);
-        if (itemById(settings::Loader::maxStationId()) != 0) {
+        if (stationItemById(settings::Loader::maxStationId()) != 0) {
           add->setEnabled(false);
         }
         if (item != 0) {
@@ -325,7 +358,7 @@ void MapView::showContextMenu(const QPoint& pos)
       emit stationAdded(id);
     }
     else if (answer == edit) {
-      selectStation(item, pos);
+      selectStation(item);
     }
     else if (answer == remove) {
       quint32 id = item->id();
@@ -357,7 +390,7 @@ void MapView::setEnableStationsMoving(bool enable)
   }
 }
 
-void MapView::selectStation(StationItem* item, const QPoint& pos)
+void MapView::selectStation(StationItem* item)
 {
   if (item == 0) {
     return;
@@ -365,26 +398,22 @@ void MapView::selectStation(StationItem* item, const QPoint& pos)
 
   switch (m_mode) {
     case SHOW: {
+        if (m_hasRoute) {
+          clearSelection();
+        }
         if (item->isSelectedStation()) {
           emit stationDeselected(item->id());
         }
         else {
-          QMenu m;
-          QAction* from = new QAction(QObject::tr("From"), &m);
-          QAction* to = new QAction(QObject::tr("To"), &m);
-          m.addAction(from);
-          m.addAction(to);
-          QAction* answer = m.exec(mapToGlobal(pos));
-          if (answer == from) {
-            emit stationDeselected(m_from);
+          if (m_from == 0) {
             m_from = item->id();
             emit fromSelected(m_from);
           }
-          else if (answer == to) {
-            emit stationDeselected(m_to);
+          else {
             m_to = item->id();
             emit toSelected(m_to);
           }
+
           foreach (quint32 id, selectedStations()) {
             if (id == m_to || id == m_from) {
               continue;
@@ -406,7 +435,7 @@ void MapView::selectStation(StationItem* item, const QPoint& pos)
 StationItem* MapView::addStation(quint32 id, const QColor& color, const QPointF& pos)
 {
   StationItem* item = new StationItem(id, color);
-  item->setZValue(settings::Loader::medZValue());
+  item->setZValue(settings::Loader::maxZValue());
   m_ui->view->scene()->addItem(item);
 
   if (!pos.isNull()) {

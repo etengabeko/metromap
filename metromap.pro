@@ -11,6 +11,7 @@ HEADERS = \
   settings/settings.h        \
   station/station.h          \
   map/map.h                  \
+  ui/crossoveritem.h         \
   ui/findroutes.h            \
   ui/managebuttons.h         \
   ui/mapview.h               \
@@ -26,6 +27,7 @@ SOURCES = \
   settings/settings.cpp      \
   station/station.cpp        \
   map/map.cpp                \
+  ui/crossoveritem.cpp       \
   ui/findroutes.cpp          \
   ui/managebuttons.cpp       \
   ui/mapview.cpp             \

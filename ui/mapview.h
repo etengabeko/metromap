@@ -12,8 +12,10 @@ namespace Ui {
 
 namespace metro {
 
+class CrossOverItem;
 class MetroMapMainWindow;
 class StationItem;
+class RailTrackItem;
 
 class MapView : public QWidget
 {
@@ -40,7 +42,7 @@ signals:
 public slots:
   void slotSelectStations(quint32 id);
   void slotSelectStations(const QList<quint32>& stations);
-  void slotShowRouteInfo(const QList<quint32>& stations);
+  void slotShowRoute(const QList<quint32>& stations);
   void slotToShowMode();
   void slotToEditMode();
 
@@ -54,11 +56,15 @@ private:
   void renderRailTracks();
   void renderCrossOvers();
 
-  StationItem* itemById(quint32 id) const;
+  StationItem* stationItemById(quint32 id) const;
+  RailTrackItem* railTrackItemById(quint32 from, quint32 to) const;
+  CrossOverItem* crossOverItemById(quint32 from, quint32 to) const;
 
   void clearSelection();
+  void transparenceRoute(const QList<quint32>& route);
+
   QList<quint32> selectedStations() const;
-  void selectStation(StationItem* item, const QPoint& pos);
+  void selectStation(StationItem* item);
   StationItem* addStation(quint32 id, const QColor& color, const QPointF& pos = QPointF());
 
   void setEnableStationsMoving(bool enable);
@@ -73,6 +79,7 @@ private:
   MetroMapMainWindow* m_controller;
 
   mode_t m_mode;
+  bool m_hasRoute;
 
   quint32 m_from;
   quint32 m_to;

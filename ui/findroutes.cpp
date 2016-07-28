@@ -7,6 +7,7 @@
 
 #include <exception/exception.h>
 #include <map/map.h>
+#include <station/station.h>
 
 #include <QToolButton>
 
@@ -154,6 +155,25 @@ void FindRoutesWidget::slotCalcRoute()
         }
       }
     }
+
+    m_ui->costLineEdit->clear();
+    if (!route.isEmpty()) {
+      qint32 totalCost = 0;
+      for (QList<quint32>::const_iterator it = route.constBegin(), end = route.constEnd(); it != end-1; ++it) {
+        if (   m_controller->map().containsStation(*it)
+            && m_controller->map().containsStation(*(it+1))) {
+          const Station& from = m_controller->map().stationById(*it);
+          const Station& to = m_controller->map().stationById(*(it+1));
+          bool ok = false;
+          qint32 cost = from.minimumCostTo(to.id(), 0, &ok);
+          if (ok == true) {
+            totalCost += cost;
+          }
+        }
+      }
+      m_ui->costLineEdit->setText(QString::number(totalCost));
+    }
+
     emit routeCreated(route);
   }
   catch (Exception& e) {

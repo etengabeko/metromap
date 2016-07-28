@@ -1,5 +1,6 @@
 #include "stationitem.h"
 
+#include "crossoveritem.h"
 #include "railtrackitem.h"
 
 #include <settings/settings.h>
@@ -158,7 +159,19 @@ void StationItem::updateRailTracks()
 
 void StationItem::updateCrossOvers()
 {
-  // TODO
+  if (scene() != 0) {
+    foreach (QGraphicsItem* each, scene()->items()) {
+      CrossOverItem* cross = qgraphicsitem_cast<CrossOverItem*>(each);
+      if (cross != 0) {
+        if (cross->stationFrom() == m_id) {
+          cross->setCoordFrom(coordCenter());
+        }
+        else if (cross->stationTo() == m_id) {
+          cross->setCoordTo(coordCenter());
+        }
+      }
+    }
+  }
 }
 
 LabelItem::LabelItem(const QPointF& topleft, QGraphicsItem* parent) :
