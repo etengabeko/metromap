@@ -234,7 +234,7 @@ QList<Map::StationIterator> Map::findDijkstraPath(const StationIterator& from, c
   QList<StationIterator> resultPath;
   StationIterator step = to;
   while (step != from) {
-    if (dist.contains(step)) {
+    if (dist.contains(step) && used[step]) {
       resultPath.push_front(step);
       step = dist[step].from;
     }
