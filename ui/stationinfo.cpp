@@ -7,9 +7,11 @@
 
 #include <exception/exception.h>
 #include <map/map.h>
+#include <settings/settings.h>
 #include <station/station.h>
 
 #include <QBoxLayout>
+#include <QColor>
 #include <QMessageBox>
 
 namespace metro {
@@ -25,6 +27,7 @@ StationInfoWidget::StationInfoWidget(MetroMapMainWindow* ctrl, QWidget* parent) 
 
   m_ui->setupUi(this);
 
+  initLineColors();
   setShowMode();
 
   connect(m_controller, SIGNAL(mapChanged()), SLOT(slotMapChanged()));
@@ -41,6 +44,17 @@ StationInfoWidget::~StationInfoWidget()
   m_ui = 0;
 }
 
+void StationInfoWidget::initLineColors()
+{
+  int index = 0;
+  foreach (const QString& each, QColor::colorNames()) {
+    QColor color(each);
+    m_ui->lineColorComboBox->addItem(each);
+    m_ui->lineColorComboBox->setItemData(index++, QVariant(color), Qt::TextColorRole);
+  }
+  m_ui->lineColorComboBox->setCurrentIndex(0);
+}
+
 void StationInfoWidget::slotSelectStation(quint32 id)
 {
   slotClear();
@@ -52,6 +66,7 @@ void StationInfoWidget::slotSelectStation(quint32 id)
     QString line = currentStation.line() > 0 ? QString::number(currentStation.line())
                                              : QString::null;
     m_ui->lineLineEdit->setText(line);
+    selectLineColor(currentStation.line());
 
     foreach (quint32 id, currentStation.railTracks()) {
       bool ok = false;
@@ -85,6 +100,19 @@ void StationInfoWidget::slotSelectStation(quint32 id)
       }
     }
   }
+}
+
+void StationInfoWidget::selectLineColor(quint32 line)
+{
+  QColor color = settings::Loader::getLineColor(line);
+  for (int i = 0, sz = m_ui->lineColorComboBox->count(); i < sz; ++i) {
+    QColor each = m_ui->lineColorComboBox->itemData(i, Qt::TextColorRole).value<QColor>();
+    if (each == color) {
+      m_ui->lineColorComboBox->setCurrentIndex(i);
+      return;
+    }
+  }
+  m_ui->lineColorComboBox->setCurrentIndex(0);
 }
 
 void StationInfoWidget::slotAddStation(quint32 id)
@@ -122,6 +150,7 @@ void StationInfoWidget::slotClear()
   m_currentStation = 0;
   m_ui->nameLineEdit->clear();
   m_ui->lineLineEdit->clear();
+  m_ui->lineColorComboBox->setCurrentIndex(0);
   foreach (QGroupBox* box, findChildren<QGroupBox*>()) {
     if (box != 0) {
       foreach (StationWithCost* st, box->findChildren<StationWithCost*>()) {
@@ -157,6 +186,7 @@ bool StationInfoWidget::setEditMode()
   m_ui->lockButton->setText(QObject::tr("Save"));
   m_ui->nameLineEdit->setReadOnly(false);
   m_ui->lineLineEdit->setReadOnly(false);
+  m_ui->lineColorComboBox->setEnabled(true);
   foreach (QGroupBox* box, findChildren<QGroupBox*>()) {
     if (box != 0) {
       foreach (QToolButton* btn, box->findChildren<QToolButton*>()) {
@@ -187,6 +217,7 @@ bool StationInfoWidget::setShowMode()
   m_ui->lockButton->setText(QObject::tr("Edit"));
   m_ui->nameLineEdit->setReadOnly(true);
   m_ui->lineLineEdit->setReadOnly(true);
+  m_ui->lineColorComboBox->setEnabled(false);
   foreach (QGroupBox* box, findChildren<QGroupBox*>()) {
     if (box != 0) {
       foreach (QToolButton* btn, box->findChildren<QToolButton*>()) {
@@ -214,6 +245,8 @@ void StationInfoWidget::saveStation()
       throw Exception(QObject::tr("Station line must be a number greater then 0"));
     }
     st.setLine(line);
+    settings::Loader::setLineColor(line, selectedColor());
+
     if (m_ui->nameLineEdit->text().isEmpty()) {
       throw Exception(QObject::tr("Station name must be no empty"));
     }
@@ -249,6 +282,12 @@ void StationInfoWidget::saveStation()
     }
     m_controller->insertStation(st);
   }
+}
+
+QColor StationInfoWidget::selectedColor() const
+{
+  int index = m_ui->lineColorComboBox->currentIndex();
+  return m_ui->lineColorComboBox->itemData(index, Qt::TextColorRole).value<QColor>();
 }
 
 void StationInfoWidget::slotAddNextStation()

@@ -44,6 +44,10 @@ private:
   bool setShowMode();
   void saveStation();
 
+  void initLineColors();
+  void selectLineColor(quint32 line);
+  QColor selectedColor() const;
+
 private:
   Ui::StationInfoWidget* m_ui;
 

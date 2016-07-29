@@ -7,6 +7,7 @@
 
 #include <exception/exception.h>
 #include <map/map.h>
+#include <settings/settings.h>
 #include <station/station.h>
 
 #include <QAction>
@@ -184,6 +185,7 @@ void MetroMapMainWindow::slotCreateMap()
   }
 
   m_mapFileName.clear();
+  settings::Loader::init(m_mapFileName);
   m_map.reset(new Map());
   m_needSaveMap = true;
   m_mapview->slotToEditMode();
@@ -225,6 +227,7 @@ void MetroMapMainWindow::slotLoadMap()
     }
 
     m_mapFileName = fileName;
+    settings::Loader::init(m_mapFileName);
     m_map.reset(new Map());
     try {
       m_map->loadFromFile(m_mapFileName);
@@ -262,6 +265,7 @@ void MetroMapMainWindow::slotSaveAsMap()
   if (!fileName.isEmpty()) {
     if (trySaveMap(fileName)) {
       m_mapFileName = fileName;
+      settings::Loader::init(m_mapFileName);
       slotMapChanged();
       m_needSaveMap = false;
       m_mapview->slotToShowMode();
@@ -333,6 +337,7 @@ void MetroMapMainWindow::slotCloseMap()
   }
 
   m_mapFileName.clear();
+  settings::Loader::init(m_mapFileName);
   m_map.reset(new Map());
   m_needSaveMap = false;
   m_mapview->slotToShowMode();

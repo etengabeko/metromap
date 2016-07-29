@@ -2,17 +2,56 @@
 
 #include <QColor>
 #include <QCoreApplication>
+#include <QDir>
+#include <QFile>
+#include <QFileInfo>
 #include <QRegExp>
 #include <QSettings>
 #include <QString>
+#include <QTemporaryFile>
+
+namespace {
+
+QString temporaryName()
+{
+  QTemporaryFile tmp;
+  tmp.open();
+  return tmp.fileName();
+}
+
+}
+
+QString metro::settings::Loader::m_fileName = ::temporaryName();
+bool metro::settings::Loader::m_isTemp = true;
 
 namespace metro {
 namespace settings {
 
+void Loader::init(const QString& mapFileName)
+{
+  if (!mapFileName.isEmpty()) {
+    QFileInfo map(mapFileName);
+    QFileInfo conf(QString("%1/../etc/%2.conf")
+                   .arg(qApp->applicationDirPath())
+                   .arg(map.fileName()));
+    if (m_isTemp) {
+      if (!conf.absoluteDir().exists()) {
+        conf.absoluteDir().mkpath(conf.absolutePath());
+      }
+      QFile::rename(m_fileName, conf.absoluteFilePath());
+    }
+    m_fileName = conf.absoluteFilePath();
+    m_isTemp = false;
+  }
+  else {
+    m_fileName = ::temporaryName();
+    m_isTemp = true;
+  }
+}
+
 QString Loader::settingsFileName()
 {
-  return QString("%1/../etc/metromap.conf")
-         .arg(qApp->applicationDirPath());
+  return m_fileName;
 }
 
 QColor Loader::getLineColor(quint32 line)
@@ -20,6 +59,12 @@ QColor Loader::getLineColor(quint32 line)
   QSettings settings(settingsFileName(), QSettings::IniFormat);
   QString colorName = settings.value(QString("line_colors/%1").arg(line), QString("gray")).toString();
   return QColor(colorName);
+}
+
+void Loader::setLineColor(quint32 line, const QColor& color)
+{
+  QSettings settings(settingsFileName(), QSettings::IniFormat);
+  settings.setValue(QString("line_colors/%1").arg(line), color.name());
 }
 
 int Loader::getPenWidth()
