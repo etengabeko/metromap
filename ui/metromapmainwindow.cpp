@@ -172,8 +172,20 @@ void MetroMapMainWindow::createStatusBar()
 
 void MetroMapMainWindow::createCentralWidget()
 {
+  QMenu* modeMenu = menuBar()->addMenu(QObject::tr("Mode"));
+
   m_mapview = new MapView(this, this);
   setCentralWidget(m_mapview);
+
+  QAction* action = new QAction(QObject::tr("Show mode"), menuBar());
+  action->setObjectName("mode_show");
+  connect(action, SIGNAL(triggered()), m_mapview, SLOT(slotToShowMode()));
+  modeMenu->addAction(action);
+
+  action = new QAction(QObject::tr("Edit mode"), menuBar());
+  action->setObjectName("mode_edit");
+  connect(action, SIGNAL(triggered()), m_mapview, SLOT(slotToEditMode()));
+  modeMenu->addAction(action);
 }
 
 void MetroMapMainWindow::slotCreateMap()

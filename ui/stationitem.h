@@ -49,19 +49,6 @@ private:
 
 };
 
-class LabelItem : public QGraphicsRectItem
-{
-public:
-  explicit LabelItem(const QPointF& topleft, QGraphicsItem* parent = 0);
-  ~LabelItem();
-
-  static QRectF labelRect(const QPointF& topleft);
-
-private:
-  QGraphicsTextItem* m_text;
-
-};
-
 } // metro
 
 #endif // METROMAP_UI_STATIONITEM_H

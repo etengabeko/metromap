@@ -9,7 +9,6 @@
 #include <QGraphicsScene>
 #include <QGraphicsSceneMouseEvent>
 #include <QGraphicsTextItem>
-#include <QObject>
 #include <QPen>
 #include <QRectF>
 #include <QString>
@@ -174,23 +173,4 @@ void StationItem::updateCrossOvers()
   }
 }
 
-LabelItem::LabelItem(const QPointF& topleft, QGraphicsItem* parent) :
-  QGraphicsRectItem(labelRect(topleft), parent),
-  m_text(new QGraphicsTextItem(QObject::tr("Edit Mode"), this))
-{
-  QPointF textPos(topleft.x()+5.0, topleft.y()+5.0);
-  m_text->setPos(textPos);
-}
-
-LabelItem::~LabelItem()
-{
-}
-
-QRectF LabelItem::labelRect(const QPointF& topleft)
-{
-  const qreal w = 100.0,
-              h = 30.0;
-  return QRectF(topleft, QSizeF(w,h));
-}
-
-}
+} // metro

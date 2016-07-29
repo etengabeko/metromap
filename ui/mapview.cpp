@@ -2,6 +2,7 @@
 #include "ui_mapview.h"
 
 #include "crossoveritem.h"
+#include "editmodeitems.h"
 #include "metromapmainwindow.h"
 #include "railtrackitem.h"
 #include "stationitem.h"
@@ -23,6 +24,7 @@
 #include <QMouseEvent>
 #include <QPair>
 #include <QPointF>
+#include <QToolButton>
 
 namespace metro {
 
@@ -182,6 +184,7 @@ void MapView::slotMapChanged()
         setEnableStationsMoving(false);
       break;
     case EDIT:
+        renderEditLabelAndLines();
         setEnableStationsMoving(true);
       break;
     default:
@@ -347,15 +350,7 @@ void MapView::showContextMenu(const QPoint& pos)
       }
     }
     else if (answer == add) {
-      quint32 id = settings::Loader::maxStationId();
-      while (m_controller->map().containsStation(id)) {
-        if (--id == 0) {
-          throw Exception(QObject::tr("Overflow limit of stations count"));
-        }
-      }
-      StationItem* st = addStation(id, QColor(Qt::gray), m_ui->view->mapToScene(pos));
-      st->selectStation(true);
-      emit stationAdded(id);
+      slotAddStation(m_ui->view->mapToScene(pos));
     }
     else if (answer == edit) {
       selectStation(item);
@@ -368,16 +363,104 @@ void MapView::showContextMenu(const QPoint& pos)
   }
 }
 
+void MapView::slotAddStation()
+{
+  QPointF p(m_ui->view->sceneRect().center());
+  slotAddStation(p);
+}
+
+void MapView::slotAddStation(const QPointF& pos)
+{
+  quint32 id = settings::Loader::maxStationId();
+  while (m_controller->map().containsStation(id)) {
+    if (--id == 0) {
+      throw Exception(QObject::tr("Overflow limit of stations count"));
+    }
+  }
+  StationItem* st = addStation(id, QColor(Qt::gray), pos);
+  st->selectStation(true);
+  emit stationAdded(id);
+}
+
+void MapView::slotEditStation()
+{
+  if (!selectedStations().isEmpty()) {
+    StationItem* item = stationItemById(selectedStations().first());
+    if (item != 0) {
+      selectStation(item);
+    }
+  }
+}
+
+void MapView::slotRemoveStation()
+{
+  if (!selectedStations().isEmpty()) {
+    StationItem* item = stationItemById(selectedStations().first());
+    if (item != 0) {
+      quint32 id = item->id();
+      delete item;
+      emit stationRemoved(id);
+    }
+  }
+}
+
 void MapView::slotToShowMode()
 {
   m_mode = SHOW;
   setEnableStationsMoving(false);
+
+  foreach (QGraphicsItem* item, m_ui->view->scene()->items()) {
+    EditModeLineItem* line = dynamic_cast<EditModeLineItem*>(item);
+    if (line != 0) {
+      m_ui->view->scene()->removeItem(line);
+    }
+    LabelItem* lb = dynamic_cast<LabelItem*>(item);
+    if (lb != 0) {
+      m_ui->view->scene()->removeItem(lb);
+    }
+  }
 }
 
 void MapView::slotToEditMode()
 {
   m_mode = EDIT;
   setEnableStationsMoving(true);
+  renderEditLabelAndLines();
+}
+
+void MapView::renderEditLabelAndLines()
+{
+  const qreal step = 50.0;
+
+  QRectF sr = m_ui->view->sceneRect();
+  QRect vpr = m_ui->view->viewport()->rect();
+  QRectF vr = QRectF(m_ui->view->mapToScene(vpr.topLeft()),
+                     m_ui->view->mapToScene(vpr.bottomRight()));
+  sr = (sr.size().width()*sr.size().height() >= vr.size().width()*vr.size().height()) ? sr : vr;
+  for (qreal x = sr.left(), w = sr.right(); x < w; x += step) {
+    QLineF line(QPointF(x, sr.top()),
+                QPointF(x, sr.bottom()));
+    EditModeLineItem* li = new EditModeLineItem(line);
+    m_ui->view->scene()->addItem(li);
+    li->setZValue(settings::Loader::minZValue());
+  }
+  for (qreal y = sr.top(), h = sr.bottom(); y < h; y+= step) {
+    QLineF line(QPointF(sr.left(), y),
+                QPointF(sr.right(), y));
+    EditModeLineItem* li = new EditModeLineItem(line);
+    m_ui->view->scene()->addItem(li);
+    li->setZValue(settings::Loader::minZValue());
+  }
+
+  QPointF labelPos = m_ui->view->mapToScene(m_ui->view->viewport()->pos());
+  labelPos.setX(labelPos.x() + 10.0);
+  labelPos.setY(labelPos.y() + 10.0);
+  LabelItem* lb = new LabelItem(labelPos);
+  lb->setZValue(settings::Loader::maxZValue());
+  m_ui->view->scene()->addItem(lb);
+
+  connect(lb->addButton(), SIGNAL(clicked()), SLOT(slotAddStation()));
+  connect(lb->removeButton(), SIGNAL(clicked()), SLOT(slotRemoveStation()));
 }
 
 void MapView::setEnableStationsMoving(bool enable)

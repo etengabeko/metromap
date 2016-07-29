@@ -49,12 +49,17 @@ public slots:
 private slots:
   void slotMapChanged();
   void slotDeselectStation(quint32 id);
+  void slotAddStation();
+  void slotAddStation(const QPointF& pos);
+  void slotEditStation();
+  void slotRemoveStation();
 
 private:
   void initScene();
   void renderStations();
   void renderRailTracks();
   void renderCrossOvers();
+  void renderEditLabelAndLines();
 
   StationItem* stationItemById(quint32 id) const;
   RailTrackItem* railTrackItemById(quint32 from, quint32 to) const;

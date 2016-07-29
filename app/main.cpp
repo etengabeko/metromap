@@ -12,7 +12,7 @@ int main(int argc, char* argv[])
 
   try {
     metro::MetroMapMainWindow mainwindow;
-    mainwindow.show();
+    mainwindow.showMaximized();
 
     if (mainwindow.init()) {
       return app.exec();
