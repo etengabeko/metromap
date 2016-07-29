@@ -215,6 +215,15 @@ void FindRoutesWidget::slotSelectTo(quint32 id)
       break;
     }
   }
+
+  SelectStationWidget* from = m_ui->stationsGroupBox->findChild<SelectStationWidget*>("from");
+  SelectStationWidget* to = m_ui->stationsGroupBox->findChild<SelectStationWidget*>("to");
+  if (from != 0 && to != 0) {
+    if (   from->selectedStation() > 0
+        && to->selectedStation() > 0) {
+      slotCalcRoute();
+    }
+  }
 }
 
 void FindRoutesWidget::slotDeselect(quint32 id)

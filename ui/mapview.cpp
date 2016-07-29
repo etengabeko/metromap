@@ -400,6 +400,10 @@ void MapView::selectStation(StationItem* item)
     case SHOW: {
         if (m_hasRoute) {
           clearSelection();
+          emit stationDeselected(m_from);
+          m_from = 0;
+          emit stationDeselected(m_to);
+          m_to = 0;
         }
         if (item->isSelectedStation()) {
           emit stationDeselected(item->id());
